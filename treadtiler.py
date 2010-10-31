@@ -2,9 +2,7 @@
 # This add-on script for Blender 2.5 turns a mesh object into the
 # tread around the circumference of a tyre.
 #
-# Start of development 2010 October 24 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
-# First generation of rough mesh 2010 October 29.
-# First generation of correctly-merged mesh 2010 October 30.
+# Created by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
 
 import math
@@ -16,8 +14,8 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (1, 1, 0),
-        "blender" : (2, 5, 4),
+        "version" : (1, 0, 0),
+        "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
         "description" :
