@@ -289,7 +289,7 @@ class TreadMaker(bpy.types.Operator) :
                       )
                 #end for
             #end for
-            sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
+            # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
             NewMesh.from_pydata(Vertices, [], Faces)
             NewMesh.update()
             NewObj = bpy.data.objects.new("Try", NewMesh)
@@ -312,7 +312,7 @@ class TreadMaker(bpy.types.Operator) :
                     # adjust vertex numbers for vertices already merged
                     v1a = v1 - len(set(v for v in Merged if v <= v1))
                     v2a = v2 - len(set(v for v in Merged if v <= v2))
-                    sys.stderr.write("Merge %d & %d => %d & %d\n" % (v1, v2, v1a, v2a)) # debug
+                    # sys.stderr.write("Merge %d & %d => %d & %d\n" % (v1, v2, v1a, v2a)) # debug
                     NewMesh.vertices[v1a].select = True
                     NewMesh.vertices[v2a].select = True
                     bpy.ops.object.editmode_toggle()
