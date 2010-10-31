@@ -194,9 +194,9 @@ class TreadMaker(bpy.types.Operator) :
                     Unconnected.add(ThisVertex.index)
                 else :
                     if Center == None :
-                        Center = mathutils.Vector(ThisVertex.co)
+                        Center = ThisVertex.co.copy()
                     else :
-                        Center += mathutils.Vector(ThisVertex.co)
+                        Center += ThisVertex.co
                     #end if
                 #end if
             #end for
@@ -213,8 +213,8 @@ class TreadMaker(bpy.types.Operator) :
                 raise Failure("selected lines must have at least two vertices")
             #end if
             Tolerance = 0.01
-            Slope1 = (mathutils.Vector(TheMesh.vertices[Edge1[-1]].co) - TheMesh.vertices[Edge1[0]].co).normalize()
-            Slope2 = (mathutils.Vector(TheMesh.vertices[Edge2[-1]].co) - TheMesh.vertices[Edge2[0]].co).normalize()
+            Slope1 = (TheMesh.vertices[Edge1[-1]].co - TheMesh.vertices[Edge1[0]].co).normalize()
+            Slope2 = (TheMesh.vertices[Edge2[-1]].co - TheMesh.vertices[Edge2[0]].co).normalize()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
@@ -227,8 +227,8 @@ class TreadMaker(bpy.types.Operator) :
                 raise Failure("selected lines are not parallel")
             #end if
             for i in range(1, len(Edge1) - 1) :
-                Slope1 = (mathutils.Vector(TheMesh.vertices[Edge1[i]].co) - TheMesh.vertices[Edge1[0]].co).normalize()
-                Slope2 = (mathutils.Vector(TheMesh.vertices[Edge2[i]].co) - TheMesh.vertices[Edge2[0]].co).normalize()
+                Slope1 = (TheMesh.vertices[Edge1[i]].co - TheMesh.vertices[Edge1[0]].co).normalize()
+                Slope2 = (TheMesh.vertices[Edge2[i]].co - TheMesh.vertices[Edge2[0]].co).normalize()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -239,12 +239,12 @@ class TreadMaker(bpy.types.Operator) :
             #end for
             ReplicationVector =  \
                 (
-                    (mathutils.Vector(TheMesh.vertices[Edge2[0]].co) + mathutils.Vector(TheMesh.vertices[Edge2[-1]].co)) / 2
+                    (TheMesh.vertices[Edge2[0]].co + TheMesh.vertices[Edge2[-1]].co) / 2
                 -
-                    (mathutils.Vector(TheMesh.vertices[Edge1[0]].co) + (TheMesh.vertices[Edge1[-1]].co)) / 2
+                    (TheMesh.vertices[Edge1[0]].co + (TheMesh.vertices[Edge1[-1]].co)) / 2
                 )
                   # displacement between mid points of tiling edges
-            RotationCenter = mathutils.Vector(TheMesh.vertices[Unconnected.pop()].co)
+            RotationCenter = TheMesh.vertices[Unconnected.pop()].co
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector)
             RotationAxis /= RotationAxis.magnitude # unit vector
