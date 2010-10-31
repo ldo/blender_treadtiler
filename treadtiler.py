@@ -272,6 +272,13 @@ class TreadMaker(bpy.types.Operator) :
                             RotationAxis # axis
                           )
                     *
+                        mathutils.Matrix.Scale
+                          (
+                            Rescale, # factor
+                            4, # size
+                            ReplicationVector # axis
+                          )
+                    *
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
                 for ThisVertex in TheMesh.vertices :
