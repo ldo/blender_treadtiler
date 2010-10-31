@@ -258,6 +258,9 @@ class TreadMaker(bpy.types.Operator) :
             NewMesh = bpy.data.meshes.new("Try")
             Vertices = []
             Faces = []
+            # sin and cos of half-angle subtended by mesh at RotationCenter
+            HalfWidthSin = ReplicationVector.magnitude / RotationRadius.magnitude / 2
+            HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
             for i in range(0, IntReplicate) :
                 ThisXForm = \
                     (
@@ -280,11 +283,18 @@ class TreadMaker(bpy.types.Operator) :
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
                 for ThisVertex in TheMesh.vertices :
-                    # TBD rescale parallel to circumference by Rescale
-                    # TBD perhaps also rescale radially to match curve
+                    ThisSin = ((ThisVertex.co - Center) * ReplicationVector.copy().normalize()) / RotationRadius.magnitude
+                    ThisCos = math.sqrt(1 - ThisSin * ThisSin)
+                    VertexOffset = RotationRadius.magnitude * (ThisCos - HalfWidthCos)
+                    VertexOffset = \
+                        (
+                            VertexOffset * ThisCos * RotationRadius.copy().normalize()
+                        +
+                            VertexOffset * ThisSin * ReplicationVector.copy().normalize()
+                        )
                     Vertices.append \
                       (
-                        ThisXForm * ThisVertex.co
+                        ThisXForm * (ThisVertex.co + VertexOffset)
                       )
                 #end for
                 for ThisFace in TheMesh.faces :
