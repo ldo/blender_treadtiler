@@ -101,6 +101,7 @@ class TreadMaker(bpy.types.Operator) :
             if type(TheMesh) != bpy.types.Mesh :
                 raise Failure("selected object is not a mesh")
             #end if
+            NewMeshName = TheObject.name + " tread"
             bpy.ops.object.editmode_toggle()
             bpy.ops.object.editmode_toggle()
               # Have to get out of edit mode and back in again in order
@@ -255,7 +256,7 @@ class TreadMaker(bpy.types.Operator) :
             Rescale = IntReplicate / Replicate
             sys.stderr.write("RotationRadius = %s, axis = %s, NrCopies = %.2f * %.2f = %d\n" % (repr(RotationRadius), repr(RotationAxis), Replicate, Rescale, IntReplicate)) # debug
             bpy.ops.object.editmode_toggle()
-            NewMesh = bpy.data.meshes.new("Try")
+            NewMesh = bpy.data.meshes.new(NewMeshName)
             Vertices = []
             Faces = []
             # sin and cos of half-angle subtended by mesh at RotationCenter
@@ -307,7 +308,7 @@ class TreadMaker(bpy.types.Operator) :
             # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
             NewMesh.from_pydata(Vertices, [], Faces)
             NewMesh.update()
-            NewObj = bpy.data.objects.new("Try", NewMesh)
+            NewObj = bpy.data.objects.new(NewMeshName, NewMesh)
             context.scene.objects.link(NewObj)
             NewObj.matrix_local = TheObject.matrix_local
             NewObjName = NewObj.name
