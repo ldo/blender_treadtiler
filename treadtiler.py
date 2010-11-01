@@ -273,13 +273,6 @@ class TreadMaker(bpy.types.Operator) :
                             RotationAxis # axis
                           )
                     *
-                        mathutils.Matrix.Scale
-                          (
-                            Rescale, # factor
-                            4, # size
-                            ReplicationVector # axis
-                          )
-                    *
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
                 for ThisVertex in TheMesh.vertices :
@@ -299,7 +292,16 @@ class TreadMaker(bpy.types.Operator) :
                         )
                     Vertices.append \
                       (
-                        ThisXForm * (ThisVertex.co + VertexOffset)
+                            ThisXForm
+                        *
+                            mathutils.Matrix.Scale
+                              (
+                                Rescale * ((ThisVertex.co - RotationCenter) * RotationRadius) / RotationRadius.magnitude / RotationRadius.magnitude, # factor
+                                4, # size
+                                ReplicationVector # axis
+                              )
+                        *
+                            (ThisVertex.co + VertexOffset)
                       )
                 #end for
                 for ThisFace in TheMesh.faces :
