@@ -245,8 +245,7 @@ class TreadMaker(bpy.types.Operator) :
                   # displacement between mid points of tiling edges
             RotationCenter = TheMesh.vertices[Unconnected.pop()].co
             RotationRadius = Center - RotationCenter
-            RotationAxis = RotationRadius.cross(ReplicationVector)
-            RotationAxis /= RotationAxis.magnitude # unit vector
+            RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
             sys.stderr.write("Center = %s\n" % repr(Center)) # debug
             sys.stderr.write("RotationCenter = %s\n" % repr(RotationCenter)) # debug
@@ -284,7 +283,12 @@ class TreadMaker(bpy.types.Operator) :
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
                 for ThisVertex in TheMesh.vertices :
-                    ThisSin = ((ThisVertex.co - Center) * ReplicationVector.copy().normalize()) / RotationRadius.magnitude
+                    ThisSin = \
+                        (
+                            ((ThisVertex.co - Center) * ReplicationVector.copy().normalize())
+                        /
+                            RotationRadius.magnitude
+                        )
                     ThisCos = math.sqrt(1 - ThisSin * ThisSin)
                     VertexOffset = RotationRadius.magnitude * (ThisCos - HalfWidthCos)
                     VertexOffset = \
