@@ -89,6 +89,7 @@ class TreadMaker(bpy.types.Operator) :
     #end poll
 
     def execute(self, context) :
+        save_mesh_select_mode = tuple(context.tool_settings.mesh_select_mode)
         try :
             if context.mode != "EDIT_MESH" :
                 raise Failure("not editing a mesh")
@@ -101,6 +102,7 @@ class TreadMaker(bpy.types.Operator) :
             if type(TheMesh) != bpy.types.Mesh :
                 raise Failure("selected object is not a mesh")
             #end if
+            context.tool_settings.mesh_select_mode = (True, False, False) # vertex selection mode
             NewMeshName = TheObject.name + " tread"
             bpy.ops.object.editmode_toggle()
             bpy.ops.object.editmode_toggle()
@@ -354,6 +356,7 @@ class TreadMaker(bpy.types.Operator) :
             self.report({"ERROR"}, Why.Msg)
             Status = {"CANCELLED"}
         #end try
+        context.tool_settings.mesh_select_mode = save_mesh_select_mode
         return Status
     #end execute
 
