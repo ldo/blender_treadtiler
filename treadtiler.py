@@ -180,7 +180,7 @@ class TreadMaker(bpy.types.Operator) :
                             ThisLine.append(NextVertex)
                             ThatVertex = NextVertex
                         #end while
-                        sys.stderr.write("selected line: %s\n" % repr(ThisLine)) # debug
+                        # sys.stderr.write("selected line: %s\n" % repr(ThisLine)) # debug
                         SelectedLines.append(ThisLine)
                     #end if
                 #end if
@@ -188,9 +188,14 @@ class TreadMaker(bpy.types.Operator) :
             if len(SelectedLines) != 2 :
                 raise Failure("selection must contain exactly two lines of vertices")
             #end if
+            OldVertices = []
+              # for making my own copy of vertices from original mesh. This seems
+              # to give more reliable results than repeatedly accessing the original
+              # mesh. Why?
             Unconnected = set()
             Center = None
             for ThisVertex in TheMesh.vertices :
+                OldVertices.append(ThisVertex.co.copy())
                 if ThisVertex.index not in VertexEdges :
                     Unconnected.add(ThisVertex.index)
                 else :
@@ -204,7 +209,7 @@ class TreadMaker(bpy.types.Operator) :
             if len(Unconnected) != 1 :
                 raise Failure("must be exactly one unconnected vertex to serve as centre of rotation")
             #end if
-            Center /= (len(TheMesh.vertices) - len(Unconnected))
+            Center /= (len(OldVertices) - len(Unconnected))
             Edge1 = SelectedLines[0]
             Edge2 = SelectedLines[1]
             if len(Edge1) != len(Edge2) :
@@ -214,8 +219,8 @@ class TreadMaker(bpy.types.Operator) :
                 raise Failure("selected lines must have at least two vertices")
             #end if
             Tolerance = 0.01
-            Slope1 = (TheMesh.vertices[Edge1[-1]].co - TheMesh.vertices[Edge1[0]].co).normalize()
-            Slope2 = (TheMesh.vertices[Edge2[-1]].co - TheMesh.vertices[Edge2[0]].co).normalize()
+            Slope1 = (OldVertices[Edge1[-1]] - OldVertices[Edge1[0]]).normalize()
+            Slope2 = (OldVertices[Edge2[-1]] - OldVertices[Edge2[0]]).normalize()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
@@ -228,8 +233,8 @@ class TreadMaker(bpy.types.Operator) :
                 raise Failure("selected lines are not parallel")
             #end if
             for i in range(1, len(Edge1) - 1) :
-                Slope1 = (TheMesh.vertices[Edge1[i]].co - TheMesh.vertices[Edge1[0]].co).normalize()
-                Slope2 = (TheMesh.vertices[Edge2[i]].co - TheMesh.vertices[Edge2[0]].co).normalize()
+                Slope1 = (OldVertices[Edge1[i]] - OldVertices[Edge1[0]]).normalize()
+                Slope2 = (OldVertices[Edge2[i]] - OldVertices[Edge2[0]]).normalize()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -240,12 +245,12 @@ class TreadMaker(bpy.types.Operator) :
             #end for
             ReplicationVector =  \
                 (
-                    (TheMesh.vertices[Edge2[0]].co + TheMesh.vertices[Edge2[-1]].co) / 2
+                    (OldVertices[Edge2[0]] + OldVertices[Edge2[-1]]) / 2
                 -
-                    (TheMesh.vertices[Edge1[0]].co + (TheMesh.vertices[Edge1[-1]].co)) / 2
+                    (OldVertices[Edge1[0]] + OldVertices[Edge1[-1]]) / 2
                 )
                   # displacement between mid points of tiling edges
-            RotationCenter = TheMesh.vertices[Unconnected.pop()].co
+            RotationCenter = OldVertices[Unconnected.pop()]
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
@@ -277,10 +282,10 @@ class TreadMaker(bpy.types.Operator) :
                     *
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
-                for ThisVertex in TheMesh.vertices :
+                for ThisVertex in OldVertices :
                     ThisSin = \
                         (
-                            ((ThisVertex.co - Center) * ReplicationVector.copy().normalize())
+                            ((ThisVertex - Center) * ReplicationVector.copy().normalize())
                         /
                             RotationRadius.magnitude
                         )
@@ -298,18 +303,18 @@ class TreadMaker(bpy.types.Operator) :
                         *
                             mathutils.Matrix.Scale
                               (
-                                Rescale * ((ThisVertex.co - RotationCenter) * RotationRadius) / RotationRadius.magnitude / RotationRadius.magnitude, # factor
+                                Rescale * ((ThisVertex - RotationCenter) * RotationRadius) / RotationRadius.magnitude / RotationRadius.magnitude, # factor
                                 4, # size
                                 ReplicationVector # axis
                               )
                         *
-                            (ThisVertex.co + VertexOffset)
+                            (ThisVertex + VertexOffset)
                       )
                 #end for
                 for ThisFace in TheMesh.faces :
                     Faces.append \
                       (
-                        list(v + i * len(TheMesh.vertices) for v in ThisFace.vertices)
+                        list(v + i * len(OldVertices) for v in ThisFace.vertices)
                       )
                 #end for
             #end for
@@ -331,8 +336,8 @@ class TreadMaker(bpy.types.Operator) :
             Merged = set()
             for i in range(0, IntReplicate) :
                 for j in range(0, len(Edge1)) :
-                    v1 = ((i + 1) % IntReplicate) * len(TheMesh.vertices) + Edge1[j]
-                    v2 = i * len(TheMesh.vertices) + Edge2[j]
+                    v1 = ((i + 1) % IntReplicate) * len(OldVertices) + Edge1[j]
+                    v2 = i * len(OldVertices) + Edge2[j]
                     # adjust vertex numbers for vertices already merged
                     v1a = v1 - len(set(v for v in Merged if v <= v1))
                     v2a = v2 - len(set(v for v in Merged if v <= v2))
