@@ -7,6 +7,7 @@
 
 import math
 import sys # debug
+import time # debug
 import bpy
 import mathutils
 
@@ -91,6 +92,7 @@ class TreadMaker(bpy.types.Operator) :
     def execute(self, context) :
         save_mesh_select_mode = tuple(context.tool_settings.mesh_select_mode)
         try :
+            sys.stderr.write("%.3f: Start\n" % time.time()) # debug
             if context.mode != "EDIT_MESH" :
                 raise Failure("not editing a mesh")
             #end if
@@ -188,6 +190,7 @@ class TreadMaker(bpy.types.Operator) :
             if len(SelectedLines) != 2 :
                 raise Failure("selection must contain exactly two lines of vertices")
             #end if
+            sys.stderr.write("%.3f: Found selected lines\n" % time.time()) # debug
             OldVertices = []
               # for making my own copy of vertices from original mesh. This seems
               # to give more reliable results than repeatedly accessing the original
@@ -243,6 +246,7 @@ class TreadMaker(bpy.types.Operator) :
                     raise Failure("selected lines are not parallel")
                 #end if
             #end for
+            sys.stderr.write("%.3f: Info collected\n" % time.time()) # debug
             ReplicationVector =  \
                 (
                     (OldVertices[Edge2[0]] + OldVertices[Edge2[-1]]) / 2
@@ -333,9 +337,11 @@ class TreadMaker(bpy.types.Operator) :
             for ThisVertex in NewMesh.vertices :
                 ThisVertex.select = False
             #end for
+            sys.stderr.write("%.3f: Mesh generated\n" % time.time()) # debug
             # Merge appropriate vertices to join up the copies of the tread mesh.
             # Have to keep popping in and out of edit mode because of Blender's
-            # caching of selected states of vertices.
+            # caching of selected states of vertices. Maybe that's why this is
+            # the slowest part of the operation.
             Merged = set()
             for i in range(0, IntReplicate) :
                 for j in range(0, len(Edge1)) :
@@ -354,10 +360,12 @@ class TreadMaker(bpy.types.Operator) :
                     Merged.add(max(v1, v2))
                 #end for
             #end for
+            sys.stderr.write("%.3f: Edges merged\n" % time.time()) # debug
             for ThisVertex in NewMesh.vertices :
                 ThisVertex.select = True # usual Blender default for newly-created object
             #end for
             NewMesh.update()
+            sys.stderr.write("%.3f: All done\n" % time.time()) # debug
             # all done
             Status = {"FINISHED"}
         except Failure as Why :
