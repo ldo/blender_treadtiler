@@ -257,7 +257,8 @@ class TreadMaker(bpy.types.Operator) :
             sys.stderr.write("Center = %s\n" % repr(Center)) # debug
             sys.stderr.write("RotationCenter = %s\n" % repr(RotationCenter)) # debug
             sys.stderr.write("ReplicationVector = %s\n" % repr(ReplicationVector)) # debug
-            Replicate = 2 * math.pi * RotationRadius.magnitude / ReplicationVector.magnitude
+            RotationRadiusLength = RotationRadius.magnitude
+            Replicate = 2 * math.pi * RotationRadiusLength / ReplicationVector.magnitude
             IntReplicate = round(Replicate)
             Rescale = IntReplicate / Replicate
             sys.stderr.write("RotationRadius = %s, axis = %s, NrCopies = %.2f * %.2f = %d\n" % (repr(RotationRadius), repr(RotationAxis), Replicate, Rescale, IntReplicate)) # debug
@@ -266,8 +267,10 @@ class TreadMaker(bpy.types.Operator) :
             Vertices = []
             Faces = []
             # sin and cos of half-angle subtended by mesh at RotationCenter
-            HalfWidthSin = ReplicationVector.magnitude / RotationRadius.magnitude / 2
+            HalfWidthSin = ReplicationVector.magnitude / RotationRadiusLength / 2
             HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
+            ReplicationUnitVector = ReplicationVector.copy().normalize()
+            RotationRadiusUnitVector = RotationRadius.copy().normalize()
             for i in range(0, IntReplicate) :
                 ThisXForm = \
                     (
@@ -292,17 +295,17 @@ class TreadMaker(bpy.types.Operator) :
                 for ThisVertex in OldVertices :
                     ThisSin = \
                         (
-                            ((ThisVertex - Center) * ReplicationVector.copy().normalize())
+                            ((ThisVertex - Center) * ReplicationUnitVector)
                         /
-                            RotationRadius.magnitude
+                            RotationRadiusLength
                         )
                     ThisCos = math.sqrt(1 - ThisSin * ThisSin)
-                    VertexOffset = RotationRadius.magnitude * (ThisCos - HalfWidthCos)
+                    VertexOffset = RotationRadiusLength * (ThisCos - HalfWidthCos)
                     VertexOffset = \
                         (
-                            VertexOffset * ThisCos * RotationRadius.copy().normalize()
+                            VertexOffset * ThisCos * RotationRadiusUnitVector
                         +
-                            VertexOffset * ThisSin * ReplicationVector.copy().normalize()
+                            VertexOffset * ThisSin * ReplicationUnitVector
                         )
                     Vertices.append \
                       (
