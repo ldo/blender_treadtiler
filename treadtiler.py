@@ -359,7 +359,6 @@ class TreadMaker(bpy.types.Operator) :
                 ThisVertex.select = True # usual Blender default for newly-created object
             #end for
             NewMesh.update()
-            sys.stderr.write("%.3f: All done\n" % time.time()) # debug
             # all done
             Status = {"FINISHED"}
         except Failure as Why :
