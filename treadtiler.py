@@ -280,6 +280,13 @@ class TreadMaker(bpy.types.Operator) :
                             RotationAxis # axis
                           )
                     *
+                        mathutils.Matrix.Scale
+                          (
+                            Rescale, # factor
+                            4, # size
+                            ReplicationVector # axis
+                          )
+                    *
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
                 for ThisVertex in OldVertices :
@@ -300,13 +307,6 @@ class TreadMaker(bpy.types.Operator) :
                     Vertices.append \
                       (
                             ThisXForm
-                        *
-                            mathutils.Matrix.Scale
-                              (
-                                Rescale * ((ThisVertex - RotationCenter) * RotationRadius) / RotationRadius.magnitude / RotationRadius.magnitude, # factor
-                                4, # size
-                                ReplicationVector # axis
-                              )
                         *
                             (ThisVertex + VertexOffset)
                       )
