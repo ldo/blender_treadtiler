@@ -210,31 +210,47 @@ class TreadMaker(bpy.types.Operator) :
                 raise Failure("must be exactly one unconnected vertex to serve as centre of rotation")
             #end if
             Center /= (len(OldVertices) - len(Unconnected))
-            Edge1 = SelectedLines[0]
-            Edge2 = SelectedLines[1]
-            if len(Edge1) != len(Edge2) :
+            Line1 = SelectedLines[0]
+            Line2 = SelectedLines[1]
+            if len(Line1) != len(Line2) :
                 raise Failure("selected lines don't have same number of vertices")
             #end if
-            if len(Edge1) < 2 :
+            if len(Line1) < 2 :
                 raise Failure("selected lines must have at least two vertices")
             #end if
+            MergeVertex = dict(zip(Line2, Line1))
+              # vertices to be merged in adjacent copies of mesh
+            MergedWithVertex = dict(zip(Line1, Line2))
+            RenumberVertex = dict \
+              (
+                (i, i) for i in range(0, len(OldVertices))
+              ) # to begin with
+            for v in reversed(sorted(Line2)) : # renumbering of remaining vertices after merging
+                RenumberVertex[v] = None # this one disappears
+                for j in range(v + 1, len(OldVertices)) : # following ones drop down by 1
+                    if RenumberVertex[j] != None :
+                        RenumberVertex[j] -= 1
+                    #end if
+                #end for
+            #end for
+            sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             Tolerance = 0.01
-            Slope1 = (OldVertices[Edge1[-1]] - OldVertices[Edge1[0]]).normalize()
-            Slope2 = (OldVertices[Edge2[-1]] - OldVertices[Edge2[0]]).normalize()
+            Slope1 = (OldVertices[Line1[-1]] - OldVertices[Line1[0]]).normalize()
+            Slope2 = (OldVertices[Line2[-1]] - OldVertices[Line2[0]]).normalize()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
             if VecNearlyEqual(Slope1, Slope2, Tolerance) :
                 pass # fine
             elif VecNearlyEqual(Slope1, - Slope2, Tolerance) :
-                Edge2 = list(reversed(Edge2))
+                Line2 = list(reversed(Line2))
             else :
                 sys.stderr.write("Slope1 = %s, Slope2 = %s\n" % (repr(Slope1), repr(Slope2))) # debug
                 raise Failure("selected lines are not parallel")
             #end if
-            for i in range(1, len(Edge1) - 1) :
-                Slope1 = (OldVertices[Edge1[i]] - OldVertices[Edge1[0]]).normalize()
-                Slope2 = (OldVertices[Edge2[i]] - OldVertices[Edge2[0]]).normalize()
+            for i in range(1, len(Line1) - 1) :
+                Slope1 = (OldVertices[Line1[i]] - OldVertices[Line1[0]]).normalize()
+                Slope2 = (OldVertices[Line2[i]] - OldVertices[Line2[0]]).normalize()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -245,9 +261,9 @@ class TreadMaker(bpy.types.Operator) :
             #end for
             ReplicationVector =  \
                 (
-                    (OldVertices[Edge2[0]] + OldVertices[Edge2[-1]]) / 2
+                    (OldVertices[Line2[0]] + OldVertices[Line2[-1]]) / 2
                 -
-                    (OldVertices[Edge1[0]] + OldVertices[Edge1[-1]]) / 2
+                    (OldVertices[Line1[0]] + OldVertices[Line1[-1]]) / 2
                 )
                   # displacement between mid points of tiling edges
             RotationCenter = OldVertices[Unconnected.pop()]
@@ -292,36 +308,84 @@ class TreadMaker(bpy.types.Operator) :
                     *
                         mathutils.Matrix.Translation(- RotationCenter)
                     ) # note operations go in reverse order, and matrix premultiplies vector
-                for ThisVertex in OldVertices :
-                    ThisSin = \
-                        (
-                            ((ThisVertex - Center) * ReplicationUnitVector)
-                        /
-                            RotationRadiusLength
-                        )
-                    ThisCos = math.sqrt(1 - ThisSin * ThisSin)
-                    VertexOffset = RotationRadiusLength * (ThisCos - HalfWidthCos)
-                    VertexOffset = \
-                        (
-                            VertexOffset * ThisCos * RotationRadiusUnitVector
-                        +
-                            VertexOffset * ThisSin * ReplicationUnitVector
-                        )
-                    Vertices.append \
-                      (
-                            ThisXForm
-                        *
-                            (ThisVertex + VertexOffset)
-                      )
+                for VertIndex, ThisVertex in enumerate(OldVertices) :
+                    if not VertIndex in MergeVertex :
+                      # vertex in Line2 in this copy will be merged with Line1 in next copy
+                        ThisSin = \
+                            (
+                                ((ThisVertex - Center) * ReplicationUnitVector)
+                            /
+                                RotationRadiusLength
+                            )
+                        ThisCos = math.sqrt(1 - ThisSin * ThisSin)
+                        VertexOffset = RotationRadiusLength * (ThisCos - HalfWidthCos)
+                        VertexOffset = \
+                            (
+                                VertexOffset * ThisCos * RotationRadiusUnitVector
+                            +
+                                VertexOffset * ThisSin * ReplicationUnitVector
+                            )
+                        ThisVertex = ThisXForm * (ThisVertex + VertexOffset)
+                        if VertIndex in MergedWithVertex :
+                          # compute merger of vertex in Line1 in this copy with
+                          # Line2 in previous copy
+                            ThatVertex = OldVertices[MergedWithVertex[VertIndex]]
+                            ThatSin = \
+                                (
+                                    ((ThatVertex - Center) * ReplicationUnitVector)
+                                /
+                                    RotationRadiusLength
+                                )
+                            ThatCos = math.sqrt(1 - ThatSin * ThatSin)
+                            VertexOffset = RotationRadiusLength * (ThatCos - HalfWidthCos)
+                            VertexOffset = \
+                                (
+                                    VertexOffset * ThatCos * RotationRadiusUnitVector
+                                +
+                                    VertexOffset * ThatSin * ReplicationUnitVector
+                                )
+                            ThatVertex = \
+                                (
+                                    mathutils.Matrix.Translation(RotationCenter)
+                                *
+                                    mathutils.Matrix.Rotation
+                                      (
+                                        math.pi * 2 * ((i + IntReplicate - 1) % IntReplicate) / IntReplicate, # angle
+                                        4, # size
+                                        RotationAxis # axis
+                                      )
+                                *
+                                    mathutils.Matrix.Scale
+                                      (
+                                        Rescale, # factor
+                                        4, # size
+                                        ReplicationVector # axis
+                                      )
+                                *
+                                    mathutils.Matrix.Translation(- RotationCenter)
+                                *
+                                    (ThatVertex + VertexOffset)
+                                )
+                            ThisVertex = (ThisVertex + ThatVertex) / 2
+                        #end if
+                        Vertices.append(ThisVertex)
+                      #end if
                 #end for
                 for ThisFace in TheMesh.faces :
-                    Faces.append \
-                      (
-                        list(v + i * len(OldVertices) for v in ThisFace.vertices)
-                      )
+                    NewFace = []
+                    for v in ThisFace.vertices :
+                        if v in MergeVertex :
+                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * (len(OldVertices) - len(Line2))) % ((len(OldVertices) - len(Line2)) * IntReplicate)
+                        else :
+                            v = RenumberVertex[v] + i * (len(OldVertices) - len(Line2))
+                        #end if
+                        NewFace.append(v)
+                    #end for
+                    Faces.append(NewFace)
                 #end for
             #end for
             # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
+            sys.stderr.write("Creating new mesh with faces: %s\n" % repr(Faces)) # debug
             NewMesh.from_pydata(Vertices, [], Faces)
             NewMesh.update()
             NewObj = bpy.data.objects.new(NewMeshName, NewMesh)
@@ -330,31 +394,6 @@ class TreadMaker(bpy.types.Operator) :
             NewObjName = NewObj.name
             bpy.ops.object.select_all(action = "DESELECT")
             bpy.ops.object.select_name(name = NewObjName)
-            for ThisVertex in NewMesh.vertices :
-                ThisVertex.select = False
-            #end for
-            # Merge appropriate vertices to join up the copies of the tread mesh.
-            # Have to keep popping in and out of edit mode because of Blender's
-            # caching of selected states of vertices. Maybe that's why this is
-            # the slowest part of the operation.
-            Merged = set()
-            for i in range(0, IntReplicate) :
-                for j in range(0, len(Edge1)) :
-                    v1 = ((i + 1) % IntReplicate) * len(OldVertices) + Edge1[j]
-                    v2 = i * len(OldVertices) + Edge2[j]
-                    # adjust vertex numbers for vertices already merged
-                    v1a = v1 - len(set(v for v in Merged if v <= v1))
-                    v2a = v2 - len(set(v for v in Merged if v <= v2))
-                    # sys.stderr.write("Merge %d & %d => %d & %d\n" % (v1, v2, v1a, v2a)) # debug
-                    NewMesh.vertices[v1a].select = True
-                    NewMesh.vertices[v2a].select = True
-                    bpy.ops.object.editmode_toggle()
-                    bpy.ops.mesh.merge(type = "CENTER")
-                    bpy.ops.object.editmode_toggle()
-                    NewMesh.vertices[min(v1a, v2a)].select = False
-                    Merged.add(max(v1, v2))
-                #end for
-            #end for
             for ThisVertex in NewMesh.vertices :
                 ThisVertex.select = True # usual Blender default for newly-created object
             #end for
