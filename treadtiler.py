@@ -14,7 +14,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (1, 0, 0),
+        "version" : (0, 1, 0),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
