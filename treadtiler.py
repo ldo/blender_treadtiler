@@ -59,10 +59,10 @@ def VecNearlyEqual(X, Y, Tol) :
     return Result
 #end VecNearlyEqual
 
-class TreadMakerPanel(bpy.types.Panel) :
+class TreadTilerPanel(bpy.types.Panel) :
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_label = "Tread Maker"
+    bl_label = "Tread Tiler"
     bl_context = "mesh_edit"
 
     #@classmethod
@@ -72,14 +72,14 @@ class TreadMakerPanel(bpy.types.Panel) :
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
-        TheCol.operator("mesh.MakeTread", text = "Make Tread")
+        TheCol.operator("mesh.TileTread", text = "Tile Tread")
     #end draw
 
-#end TreadMakerPanel
+#end TreadTilerPanel
 
-class TreadMaker(bpy.types.Operator) :
-    bl_idname = "mesh.MakeTread"
-    bl_label = "Make Tread"
+class TreadTiler(bpy.types.Operator) :
+    bl_idname = "mesh.TileTread"
+    bl_label = "Tile Tread"
     bl_register = True
     bl_undo = True
 
@@ -408,7 +408,7 @@ class TreadMaker(bpy.types.Operator) :
         return Status
     #end execute
 
-#end TreadMaker
+#end TreadTiler
 
 def register() :
     pass
