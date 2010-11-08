@@ -81,7 +81,7 @@ class TreadTiler(bpy.types.Operator) :
     bl_idname = "mesh.TileTread"
     bl_label = "Tile Tread"
     bl_register = True
-    bl_undo = True
+    bl_undo = bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(santa, context) :
