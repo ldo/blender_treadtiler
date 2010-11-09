@@ -210,6 +210,7 @@ class TreadTiler(bpy.types.Operator) :
                 raise Failure("must be exactly one unconnected vertex to serve as centre of rotation")
             #end if
             Center /= (len(OldVertices) - len(Unconnected))
+              # centre of mesh (excluding unconnected vertex)
             Line1 = SelectedLines[0]
             Line2 = SelectedLines[1]
             if len(Line1) != len(Line2) :
@@ -218,22 +219,6 @@ class TreadTiler(bpy.types.Operator) :
             if len(Line1) < 2 :
                 raise Failure("selected lines must have at least two vertices")
             #end if
-            MergeVertex = dict(zip(Line2, Line1))
-              # vertices to be merged in adjacent copies of mesh
-            MergedWithVertex = dict(zip(Line1, Line2))
-            RenumberVertex = dict \
-              (
-                (i, i) for i in range(0, len(OldVertices))
-              ) # to begin with
-            for v in reversed(sorted(Line2)) : # renumbering of remaining vertices after merging
-                RenumberVertex[v] = None # this one disappears
-                for j in range(v + 1, len(OldVertices)) : # following ones drop down by 1
-                    if RenumberVertex[j] != None :
-                        RenumberVertex[j] -= 1
-                    #end if
-                #end for
-            #end for
-            sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             Tolerance = 0.01
             Slope1 = (OldVertices[Line1[-1]] - OldVertices[Line1[0]]).normalize()
             Slope2 = (OldVertices[Line2[-1]] - OldVertices[Line2[0]]).normalize()
@@ -266,7 +251,8 @@ class TreadTiler(bpy.types.Operator) :
                     (OldVertices[Line1[0]] + OldVertices[Line1[-1]]) / 2
                 )
                   # displacement between mid points of tiling edges
-            RotationCenter = OldVertices[Unconnected.pop()]
+            RotationCenterVertex = Unconnected.pop()
+            RotationCenter = OldVertices[RotationCenterVertex]
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
@@ -287,6 +273,23 @@ class TreadTiler(bpy.types.Operator) :
             HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
             ReplicationUnitVector = ReplicationVector.copy().normalize()
             RotationRadiusUnitVector = RotationRadius.copy().normalize()
+            MergeVertex = dict(zip(Line2, Line1))
+              # vertices to be merged in adjacent copies of mesh
+            MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
+            MergedWithVertex = dict(zip(Line1, Line2))
+            RenumberVertex = dict \
+              (
+                (i, i) for i in range(0, len(OldVertices))
+              ) # to begin with
+            for v in reversed(sorted(MergeVertex.keys())) : # renumbering of remaining vertices after merging
+                RenumberVertex[v] = None # this one disappears
+                for j in range(v + 1, len(OldVertices)) : # following ones drop down by 1
+                    if RenumberVertex[j] != None :
+                        RenumberVertex[j] -= 1
+                    #end if
+                #end for
+            #end for
+            sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             for i in range(0, IntReplicate) :
                 ThisXForm = \
                     (
@@ -375,15 +378,16 @@ class TreadTiler(bpy.types.Operator) :
                     NewFace = []
                     for v in ThisFace.vertices :
                         if v in MergeVertex :
-                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * (len(OldVertices) - len(Line2))) % ((len(OldVertices) - len(Line2)) * IntReplicate)
+                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * (len(OldVertices) - len(Line2) - 1)) % ((len(OldVertices) - len(Line2) - 1) * IntReplicate)
                         else :
-                            v = RenumberVertex[v] + i * (len(OldVertices) - len(Line2))
+                            v = RenumberVertex[v] + i * (len(OldVertices) - len(Line2) - 1)
                         #end if
                         NewFace.append(v)
                     #end for
                     Faces.append(NewFace)
                 #end for
             #end for
+            Vertices.append(RotationCenter) # single merged rotation centre
             # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
             sys.stderr.write("Creating new mesh with faces: %s\n" % repr(Faces)) # debug
             NewMesh.from_pydata(Vertices, [], Faces)
