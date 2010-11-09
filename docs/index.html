@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+<HEAD>
+<TITLE>TreadTiler User Guide</TITLE>
+
+<STYLE TYPE="text/css">
+div.h1
+  {
+	font-size : x-large;
+	font-weight : bold;
+	text-align : center;
+  } /*div.h1*/
+div.h2
+  {
+	font-size : large;
+	font-weight : bold;
+  } /*div.h2*/
+div.h3
+  {
+	font-weight : bold;
+  } /*div.h3*/
+div.figure
+  {
+    text-align : center;
+  } /*div.figure*/
+
+a
+  {
+	font-weight : bold;
+	color : #000080;
+	text-decoration : none;
+  } /*a*/
+</STYLE>
+</HEAD>
+<BODY STYLE="background-color : #F4F4F0">
+
+
+<DIV CLASS="h1">TreadTiler 0.1 User Guide<BR>
+<A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
+2010 November 9</DIV>
+<DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
+<OL>
+<LI><A HREF="#Introduction">Introduction</A>
+<LI><A HREF="#Installation">Installation</A>
+<LI><A HREF="#Usage">Usage</A>
+<UL>
+<LI><A HREF="#MeshCreation">Creating The Mesh</A>
+<LI><A HREF="#RotationCentre">Defining The Centre Of Rotation</A>
+<LI><A HREF="#SelectingSides">Selecting The Sides To Be Joined</A>
+</UL>
+</OL>
+</DIV>
+
+<DIV STYLE="width : 78%">
+
+<DIV CLASS="h2"><A NAME="Introduction"></A>Introduction</DIV>
+<P>TreadTiler is an addon for the still-in-development Blender 2.5<I>x</I> to
+aid in the creation of tyre tread patterns. The basic idea is that you create
+a minimal piece of the pattern, and TreadTiler will replicate it around a ring
+and join the adjacent sides together to form the complete pattern.
+
+
+<DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
+<P>To install TreadTiler, launch Blender 2.5<I>x</I>,  bring up the
+User Preferences window, select the Add-Ons tab, and click the “Install Add-Ons”
+button. In the file selector dialog that comes up, select the <TT>treadtiler.py</TT>
+file, and click the “Install Add-On...” button. This will take you back to Blender’s
+User Preferences window, where you should find that TreadTiler is now listed among
+the available add-ons, which you can enable for the current document by ticking its
+checkbox.
+
+<DIV CLASS="h2"><A NAME="Usage"></A>Usage</DIV>
+<P>To use TreadTiler, the basic steps are:
+<OL>
+<LI>Create a mesh that will be replicated to make the tyre-tread pattern
+<LI>Add a single unconnected point to the mesh that will serve as the centre of rotation
+<LI>Select two contiguous lines of vertices along the two opposite sides of the
+mesh that will adjoin in successive copies
+<LI>Invoke TreadTiler.
+</OL>
+
+<DIV CLASS="h3"><A NAME="MeshCreation"></A>Creating The Mesh</DIV>
+<P>The pattern mesh can consist of pretty much whatever geometry you like. The
+main restrictions are:
+<UL>
+<LI>The two opposite sides that will be joined in adjacent copies
+must be <I>parallel</I> and <I>congruent</I>—it must be possible to move one so that
+all the vertices line up exactly on top of the other.
+<LI>There must be no edges running directly between vertices on those two opposite
+sides—there must always be other vertices in-between. Otherwise TreadTiler cannot
+separate the selected vertices belonging to the two sides.
+</UL>
+<P>We will use a simple example to start with. This way, you can be sure have
+the basic steps down properly before attempting something more ambitious.
+<P>Create a new Grid mesh with 5 subdivisions along
+the X-axis and 3 subdivisions along the Y-axis (top view):
+<DIV CLASS="figure"><IMG SRC="TreadMesh1.png"></DIV>
+<P>Select the middle row of vertices (parallel to the X-axis) and move it along the Y-axis, closer to the top row:
+<DIV CLASS="figure"><IMG SRC="TreadMesh2.png"></DIV>
+<P>Now select the second and fourth columns of vertices (parallel to the Y-axis) and move them
+along the Y-axis, closer to the adjacent columns:
+<DIV CLASS="figure"><IMG SRC="TreadMesh3.png"></DIV>
+<P>Make sure no vertices are selected. Switch to face-selection mode, and select
+the two large rectangular faces:
+<DIV CLASS="figure"><IMG SRC="TreadMesh4.png"></DIV>
+<P>Switch to a more oblique view so you can observe displacement along the Z-axis.
+Press the <B>E</B> key to extrude the faces; the extrusion is automatically
+constrained to the Z-axis; extrude as much as you want to give some reasonable
+depth to the tread pattern:
+<DIV CLASS="figure"><IMG SRC="TreadMesh5.png"></DIV>
+
+<DIV CLASS="h3"><A NAME="RotationCentre"></A>Defining The Centre Of Rotation</DIV>
+<P>Now we need to add a single unconnected vertex. This will define the centre
+around which the mesh pattern will be rotated.
+<P>In order to ensure this is properly located with respect to the tread pattern,
+you can construct this point from, say, the four corners of the tread mesh. Make
+sure nothing is selected, switch to vertex-selection mode, and select the four corners
+of the tread pattern:
+<DIV CLASS="figure"><IMG SRC="TreadMesh6.png"></DIV>
+<P>Duplicate these vertices (<B>SHIFT+D</B>), constrain their motion to the Z-axis
+(press <B>Z</B>) and move them some distance away from the pattern mesh:
+<DIV CLASS="figure"><IMG SRC="TreadMesh7.png"></DIV>
+<P>Then merge them into a single vertex at the centre (<B>ALT+M</B>).
+<P><B>Finding the rotation centre:</B> a single unconnected vertex is easy to
+lose. If you have trouble seeing where it is (if for example you want to move
+it to a different place), right-click any vertex in the main
+part of the mesh to select it, then press <B>CTRL+L</B> to select all vertices
+linked to that, then <B>CTRL+I</B> to invert the selection. You should now have
+just the unconnected vertex selected. If you press <B>CTRL+I</B> and then <B>CTRL+I</B>
+again, watch out for the orange dot winking off and on.
+
+<DIV CLASS="h3"><A NAME="SelectingSides"></A>Selecting The Sides To Be Joined</DIV>
+<P>Make sure no vertices are selected. Now carefully select vertices forming two
+contiguous lines on opposite ends of the pattern mesh:
+<DIV CLASS="figure"><IMG SRC="TreadMesh8.png"></DIV>
+<P>If you have TreadTiler properly installed and enabled for this document, then
+you should see the TreadTiler panel appear in the Tool Shelf on the left of the 3D view
+(probably near the bottom, press <B>T</B> to display the Tool Shelf if it’s not
+already visible):
+<DIV CLASS="figure"><IMG SRC="TreadMesh9.png"></DIV>
+<P>Press the “Tile Tread” button. If you see any error messages about not
+properly selecting two lines of vertices, or not having a single unconnected point
+to be the rotation centre, then review the steps above and make sure you properly
+followed them.
+<P>Otherwise, all going well, you should see a new mesh object appear:
+<DIV CLASS="figure"><IMG SRC="TreadMesh10.png"></DIV>
+<P>The number of copies of the replicated mesh pattern are automatically computed
+based on the closest whole-integer number of copies that can be fitted around
+the circumference of the rotation around the centre vertex (with the appropriate
+scaling adjustment). If you want more copies for a bigger ring, just move the
+rotation centre vertex further away from the pattern:
+<DIV CLASS="figure"><IMG SRC="TreadMesh11.png"></DIV>
+<P>Note that the original mesh object you created is not deleted or modified
+in any way; instead, a new mesh object is created, taking the name of the old
+one and adding “ tread” to the end. Thus, if you followed the above example closely,
+the original mesh would have its default name of “Grid”, so the new mesh would
+be called “Grid tread”.
+<P>Think maybe it looks too angular? Go back to the original mesh pattern, and add
+some more vertices in the middle, perhaps by doing a loop cut (<B>CTRL+R</B>):
+<DIV CLASS="figure"><IMG SRC="TreadMesh12.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh13.png"></DIV>
+<P>Now when you rerun TreadTiler (don’t forget to reselect the vertices along the
+two sides to be joined), it will apply a radial displacement to the
+extra vertices to give more of a curve to the shape:
+<DIV CLASS="figure"><IMG SRC="TreadMesh14.png"></DIV>
+
+</DIV>
+</BODY>
+</HTML>
