@@ -398,7 +398,7 @@ class TreadTiler(bpy.types.Operator) :
                     Faces.append(NewFace)
                 #end for
             #end for
-            Vertices.append(RotationCenter) # single merged rotation centre
+            # Vertices.append(RotationCenter) # single merged rotation centre--not needed
             # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
             sys.stderr.write("Creating new mesh with faces: %s\n" % repr(Faces)) # debug
             NewMesh.from_pydata(Vertices, [], Faces)
