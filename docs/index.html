@@ -37,7 +37,7 @@ a
 
 <DIV CLASS="h1">TreadTiler 0.1 User Guide<BR>
 <A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
-2010 November 9</DIV>
+2010 November 11</DIV>
 <DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
 <OL>
 <LI><A HREF="#Introduction">Introduction</A>
@@ -54,7 +54,8 @@ a
 <DIV STYLE="width : 78%">
 
 <DIV CLASS="h2"><A NAME="Introduction"></A>Introduction</DIV>
-<P>TreadTiler is an addon for the still-in-development Blender 2.5<I>x</I> to
+<P>TreadTiler is an addon for the still-in-development
+<A HREF="http://www.blender.org/">Blender</A> 2.5<I>x</I> to
 aid in the creation of tyre tread patterns. The basic idea is that you create
 a minimal piece of the pattern, and TreadTiler will replicate it around a ring
 and join the adjacent sides together to form the complete pattern.
@@ -63,8 +64,9 @@ and join the adjacent sides together to form the complete pattern.
 <DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
 <P>To install TreadTiler, launch Blender 2.5<I>x</I>,  bring up the
 User Preferences window, select the Add-Ons tab, and click the “Install Add-Ons”
-button. In the file selector dialog that comes up, select the <TT>treadtiler.py</TT>
-file, and click the “Install Add-On...” button. This will take you back to Blender’s
+button. In the file selector dialog that comes up find your way to the directory
+containing the <TT>treadtiler.py</TT> file, select it, and click the
+“Install Add-On...” button. This will take you back to Blender’s
 User Preferences window, where you should find that TreadTiler is now listed among
 the available add-ons, which you can enable for the current document by ticking its
 checkbox.
@@ -92,13 +94,14 @@ separate the selected vertices belonging to the two sides.
 </UL>
 <P>We will use a simple example to start with. This way, you can be sure have
 the basic steps down properly before attempting something more ambitious.
-<P>Create a new Grid mesh with 5 subdivisions along
-the X-axis and 3 subdivisions along the Y-axis (top view):
+<P>Create a new Grid mesh with 3 subdivisions along
+the X-axis and 4 subdivisions along the Y-axis (here in top view):
 <DIV CLASS="figure"><IMG SRC="TreadMesh1.png"></DIV>
-<P>Select the middle row of vertices (parallel to the X-axis) and move it along the Y-axis, closer to the top row:
+<P>Select the two middle rows of vertices (parallel to the X-axis) and press <B>S</B>(scale)
+then <B>Y</B> to move them symmetrically closer to the edges:
 <DIV CLASS="figure"><IMG SRC="TreadMesh2.png"></DIV>
-<P>Now select the second and fourth columns of vertices (parallel to the Y-axis) and move them
-along the Y-axis, closer to the adjacent columns:
+<P>Now select the middel column of vertices (parallel to the Y-axis) and move it
+along the Y-axis to produce more of a chevron shape:
 <DIV CLASS="figure"><IMG SRC="TreadMesh3.png"></DIV>
 <P>Make sure no vertices are selected. Switch to face-selection mode, and select
 the two large rectangular faces:
@@ -114,7 +117,7 @@ depth to the tread pattern:
 around which the mesh pattern will be rotated.
 <P>In order to ensure this is properly located with respect to the tread pattern,
 you can construct this point from, say, the four corners of the tread mesh. Make
-sure nothing is selected, switch to vertex-selection mode, and select the four corners
+sure nothing is selected, switch to vertex-selection mode, and select four corners
 of the tread pattern:
 <DIV CLASS="figure"><IMG SRC="TreadMesh6.png"></DIV>
 <P>Duplicate these vertices (<B>SHIFT+D</B>), constrain their motion to the Z-axis
