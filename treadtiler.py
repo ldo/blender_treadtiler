@@ -139,7 +139,12 @@ class TreadTiler(bpy.types.Operator) :
                     VertexEdges[ThisVertex].append(ThisEdge)
                 #end for
             #end for
-            # Find two continuous lines of selected vertices
+            # Find two continuous lines of selected vertices. Each line begins
+            # and ends with a vertex connected to one other vertex, while the
+            # intermediate vertices are each connected to two other vertices.
+            # Why not allow two selected loops of vertices as well, you may ask?
+            # Because then I can't figure out which vertex on one loop should be
+            # merged with which one on the other loop in an adjacent copy.
             SelectedLines = []
             Seen = set()
             for ThisVertex in TheMesh.vertices :

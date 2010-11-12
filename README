@@ -4,6 +4,7 @@ of the pattern, and TreadTiler will replicate that around a ring to make
 the full tyre tread.
 
 The user manual can be found, in HTML format, in the docs/ subdirectory.
+Start with docs/index.html.
 
 Note that Blender 2.5 is still in prerelease and undergoing continuing
 development. Its Python APIs are still subject to change, so this script
