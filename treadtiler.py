@@ -326,7 +326,7 @@ class TreadTiler(bpy.types.Operator) :
                           )
                     *
                         mathutils.Matrix.Translation(- RotationCenter)
-                    ) # note operations go in reverse order, and matrix premultiplies vector
+                    )
                 for VertIndex, ThisVertex in enumerate(OldVertices) :
                     if not VertIndex in MergeVertex :
                       # vertex in Line2 in this copy will be merged with Line1 in next copy
@@ -344,7 +344,7 @@ class TreadTiler(bpy.types.Operator) :
                             +
                                 VertexOffset * ThisSin * ReplicationUnitVector
                             )
-                        ThisVertex = ThisXForm * (ThisVertex + VertexOffset)
+                        ThisVertex = (ThisVertex + VertexOffset) * ThisXForm
                         if VertIndex in MergedWithVertex :
                           # compute merger of vertex in Line1 in this copy with
                           # Line2 in previous copy
@@ -365,25 +365,27 @@ class TreadTiler(bpy.types.Operator) :
                                 )
                             ThatVertex = \
                                 (
-                                    mathutils.Matrix.Translation(RotationCenter)
-                                *
-                                    mathutils.Matrix.Rotation
-                                      (
-                                        math.pi * 2 * ((i + IntReplicate - 1) % IntReplicate) / IntReplicate, # angle
-                                        4, # size
-                                        RotationAxis # axis
-                                      )
-                                *
-                                    mathutils.Matrix.Scale
-                                      (
-                                        Rescale, # factor
-                                        4, # size
-                                        ReplicationVector # axis
-                                      )
-                                *
-                                    mathutils.Matrix.Translation(- RotationCenter)
-                                *
                                     (ThatVertex + VertexOffset)
+                                *
+                                    (
+                                        mathutils.Matrix.Translation(RotationCenter)
+                                    *
+                                        mathutils.Matrix.Rotation
+                                          (
+                                            math.pi * 2 * ((i + IntReplicate - 1) % IntReplicate) / IntReplicate, # angle
+                                            4, # size
+                                            RotationAxis # axis
+                                          )
+                                    *
+                                        mathutils.Matrix.Scale
+                                          (
+                                            Rescale, # factor
+                                            4, # size
+                                            ReplicationVector # axis
+                                          )
+                                    *
+                                        mathutils.Matrix.Translation(- RotationCenter)
+                                    )
                                 )
                             ThisVertex = (ThisVertex + ThatVertex) / 2
                         #end if
