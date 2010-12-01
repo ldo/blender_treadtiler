@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 1, 1),
+        "version" : (0, 2, 0),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -83,6 +83,7 @@ class TreadTilerPanel(bpy.types.Panel) :
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
+        TheCol.prop(context.scene, "treadtiler_join_ends")
         TheCol.operator("mesh.TileTread", text = "Tile Tread")
     #end draw
 
@@ -119,6 +120,7 @@ class TreadTiler(bpy.types.Operator) :
             bpy.ops.object.editmode_toggle()
               # Have to get out of edit mode and back in again in order
               # to synchronize possibly cached state of vertex selections
+            join_ends = context.scene.treadtiler_join_ends
             if True : # debug
                 for ThisVertex in TheMesh.vertices :
                     sys.stderr.write("v%d: (%.2f, %.2f, %.2f) %s\n" % ((ThisVertex.index,) + tuple(ThisVertex.co) + (["n", "y"][ThisVertex.select],)))
@@ -305,6 +307,8 @@ class TreadTiler(bpy.types.Operator) :
                     #end if
                 #end for
             #end for
+            NrVerticesPerTile = len(OldVertices) - len(Line2) - 1
+            TotalNrVertices = NrVerticesPerTile * IntReplicate
             sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             for i in range(0, IntReplicate) :
                 ThisXForm = \
@@ -396,14 +400,25 @@ class TreadTiler(bpy.types.Operator) :
                     NewFace = []
                     for v in ThisFace.vertices :
                         if v in MergeVertex :
-                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * (len(OldVertices) - len(Line2) - 1)) % ((len(OldVertices) - len(Line2) - 1) * IntReplicate)
+                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices
                         else :
-                            v = RenumberVertex[v] + i * (len(OldVertices) - len(Line2) - 1)
+                            v = RenumberVertex[v] + i * NrVerticesPerTile
                         #end if
                         NewFace.append(v)
                     #end for
                     Faces.append(NewFace)
                 #end for
+                if join_ends :
+                    Faces.append \
+                      (
+                        [
+                            RenumberVertex[Line1[0]] +  i * NrVerticesPerTile,
+                            RenumberVertex[Line1[-1]] +  i * NrVerticesPerTile,
+                            (RenumberVertex[MergeVertex[Line2[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
+                            (RenumberVertex[MergeVertex[Line2[0]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
+                        ]
+                      )
+                #end if
             #end for
             # Vertices.append(RotationCenter) # single merged rotation centre--not needed
             # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
@@ -433,11 +448,16 @@ class TreadTiler(bpy.types.Operator) :
 #end TreadTiler
 
 def register() :
-    pass
+    bpy.types.Scene.treadtiler_join_ends = bpy.props.BoolProperty \
+      (
+        name = "Join Ends",
+        description = "Join the inner edges to make a torus",
+        default = False
+      )
 #end register
 
 def unregister() :
-    pass
+    del bpy.types.Scene.treadtiler_join_ends
 #end unregister
 
 if __name__ == "__main__" :
