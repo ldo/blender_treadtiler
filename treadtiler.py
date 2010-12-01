@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 2, 0),
+        "version" : (0, 3, 0),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -93,7 +93,7 @@ class TreadTiler(bpy.types.Operator) :
     bl_idname = "mesh.TileTread"
     bl_label = "Tile Tread"
     bl_register = True
-    bl_undo = bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(santa, context) :
@@ -141,6 +141,17 @@ class TreadTiler(bpy.types.Operator) :
                     VertexEdges[ThisVertex].append(ThisEdge)
                 #end for
             #end for
+            if join_ends :
+                EdgeFaces = {} # mapping from edge to adjacent faces
+                for ThisFace in TheMesh.faces :
+                    for ThisEdge in ThisFace.edge_keys :
+                        if not ThisEdge in EdgeFaces :
+                            EdgeFaces[ThisEdge] = []
+                        #end if
+                        EdgeFaces[ThisEdge].append(ThisFace.edge_keys)
+                    #end for
+                #end for
+            #end if
             # Find two continuous lines of selected vertices. Each line begins
             # and ends with a vertex connected to one other vertex, while the
             # intermediate vertices are each connected to two other vertices.
@@ -229,31 +240,31 @@ class TreadTiler(bpy.types.Operator) :
             #end if
             Center /= (len(OldVertices) - len(Unconnected))
               # centre of mesh (excluding unconnected vertex)
-            Line1 = SelectedLines[0]
-            Line2 = SelectedLines[1]
-            if len(Line1) != len(Line2) :
+            TileLine1 = SelectedLines[0]
+            TileLine2 = SelectedLines[1]
+            if len(TileLine1) != len(TileLine2) :
                 raise Failure("selected lines don't have same number of vertices")
             #end if
-            if len(Line1) < 2 :
+            if len(TileLine1) < 2 :
                 raise Failure("selected lines must have at least two vertices")
             #end if
             Tolerance = 0.01
-            Slope1 = (OldVertices[Line1[-1]] - OldVertices[Line1[0]]).normalize()
-            Slope2 = (OldVertices[Line2[-1]] - OldVertices[Line2[0]]).normalize()
+            Slope1 = (OldVertices[TileLine1[-1]] - OldVertices[TileLine1[0]]).normalize()
+            Slope2 = (OldVertices[TileLine2[-1]] - OldVertices[TileLine2[0]]).normalize()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
             if VecNearlyEqual(Slope1, Slope2, Tolerance) :
                 pass # fine
             elif VecNearlyEqual(Slope1, - Slope2, Tolerance) :
-                Line2 = list(reversed(Line2))
+                TileLine2 = list(reversed(TileLine2))
             else :
                 sys.stderr.write("Slope1 = %s, Slope2 = %s\n" % (repr(Slope1), repr(Slope2))) # debug
                 raise Failure("selected lines are not parallel")
             #end if
-            for i in range(1, len(Line1) - 1) :
-                Slope1 = (OldVertices[Line1[i]] - OldVertices[Line1[0]]).normalize()
-                Slope2 = (OldVertices[Line2[i]] - OldVertices[Line2[0]]).normalize()
+            for i in range(1, len(TileLine1) - 1) :
+                Slope1 = (OldVertices[TileLine1[i]] - OldVertices[TileLine1[0]]).normalize()
+                Slope2 = (OldVertices[TileLine2[i]] - OldVertices[TileLine2[0]]).normalize()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -262,11 +273,71 @@ class TreadTiler(bpy.types.Operator) :
                     raise Failure("selected lines are not parallel")
                 #end if
             #end for
+            if join_ends :
+                # Find two continuous lines of vertices connecting the ends of
+                # the selected lines. These will be joined with additional faces
+                # to complete the torus in the generated mesh.
+                JoinLine1 = []
+                JoinLine2 = []
+                Vertex1 = TileLine1[0]
+                Vertex2 = TileLine1[-1]
+                Vertex1Prev = TileLine1[1]
+                Vertex2Prev = TileLine1[-2]
+                while True :
+                    JoinLine1.append(Vertex1)
+                    JoinLine2.append(Vertex2)
+                    if Vertex1 == TileLine2[0] or Vertex2 == TileLine2[-1] :
+                        if Vertex1 != TileLine2[0] or Vertex2 != TileLine2[-1] :
+                            sys.stderr.write("JoinLine1 so far: %s\n" % repr(JoinLine1)) # debug
+                            sys.stderr.write("JoinLine2 so far: %s\n" % repr(JoinLine2)) # debug
+                            sys.stderr.write("TileLine1 = %s\n" % repr(TileLine1)) # debug
+                            sys.stderr.write("TileLine2 = %s\n" % repr(TileLine2)) # debug
+                            raise Failure("end lines to be joined do not have equal numbers of vertices")
+                        #end if
+                        break
+                    #end if
+                    if Vertex1 == TileLine2[-1] or Vertex2 == TileLine2[0] :
+                        raise Failure("end lines to be joined don't connect properly between selected lines")
+                    #end if
+                    Vertex1Next, Vertex2Next = None, None
+                    for ThisEdge in VertexEdges[Vertex1] :
+                        sys.stderr.write("Edge %s has %d faces.\n" % (repr(tuple(ThisEdge.vertices)), len(EdgeFaces[tuple(ThisEdge.vertices)]))) # debug
+                        if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
+                            for ThisVertex in ThisEdge.vertices :
+                                if ThisVertex != Vertex1 and ThisVertex != Vertex1Prev :
+                                    if Vertex1Next != None :
+                                        raise Failure("can't find unique line between ends to join")
+                                    #end if
+                                    Vertex1Next = ThisVertex
+                                #end if
+                            #end for
+                        #end if
+                    #end for
+                    for ThisEdge in VertexEdges[Vertex2] :
+                        sys.stderr.write("Edge %s has %d faces.\n" % (repr(tuple(ThisEdge.vertices)), len(EdgeFaces[tuple(ThisEdge.vertices)]))) # debug
+                        if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
+                            for ThisVertex in ThisEdge.vertices :
+                                if ThisVertex != Vertex2 and ThisVertex != Vertex2Prev :
+                                    if Vertex2Next != None :
+                                        raise Failure("can't find unique line between ends to join")
+                                    #end if
+                                    Vertex2Next = ThisVertex
+                                #end if
+                            #end for
+                        #end if
+                    #end for
+                    if Vertex1Next == None or Vertex2Next == None :
+                        raise Failure("can't find line between ends to join")
+                    #end if
+                    Vertex1Prev, Vertex2Prev = Vertex1, Vertex2
+                    Vertex1, Vertex2 = Vertex1Next, Vertex2Next
+                #end while
+            #end if
             ReplicationVector =  \
                 (
-                    (OldVertices[Line2[0]] + OldVertices[Line2[-1]]) / 2
+                    (OldVertices[TileLine2[0]] + OldVertices[TileLine2[-1]]) / 2
                 -
-                    (OldVertices[Line1[0]] + OldVertices[Line1[-1]]) / 2
+                    (OldVertices[TileLine1[0]] + OldVertices[TileLine1[-1]]) / 2
                 )
                   # displacement between mid points of tiling edges
             RotationCenterVertex = Unconnected.pop()
@@ -291,10 +362,10 @@ class TreadTiler(bpy.types.Operator) :
             HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
             ReplicationUnitVector = ReplicationVector.copy().normalize()
             RotationRadiusUnitVector = RotationRadius.copy().normalize()
-            MergeVertex = dict(zip(Line2, Line1))
+            MergeVertex = dict(zip(TileLine2, TileLine1))
               # vertices to be merged in adjacent copies of mesh
             MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
-            MergedWithVertex = dict(zip(Line1, Line2))
+            MergedWithVertex = dict(zip(TileLine1, TileLine2))
             RenumberVertex = dict \
               (
                 (i, i) for i in range(0, len(OldVertices))
@@ -307,7 +378,7 @@ class TreadTiler(bpy.types.Operator) :
                     #end if
                 #end for
             #end for
-            NrVerticesPerTile = len(OldVertices) - len(Line2) - 1
+            NrVerticesPerTile = len(OldVertices) - len(TileLine2) - 1
             TotalNrVertices = NrVerticesPerTile * IntReplicate
             sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             for i in range(0, IntReplicate) :
@@ -333,7 +404,7 @@ class TreadTiler(bpy.types.Operator) :
                     )
                 for VertIndex, ThisVertex in enumerate(OldVertices) :
                     if not VertIndex in MergeVertex :
-                      # vertex in Line2 in this copy will be merged with Line1 in next copy
+                      # vertex in TileLine2 in this copy will be merged with TileLine1 in next copy
                         ThisSin = \
                             (
                                 ((ThisVertex - Center) * ReplicationUnitVector)
@@ -350,8 +421,8 @@ class TreadTiler(bpy.types.Operator) :
                             )
                         ThisVertex = (ThisVertex + VertexOffset) * ThisXForm
                         if VertIndex in MergedWithVertex :
-                          # compute merger of vertex in Line1 in this copy with
-                          # Line2 in previous copy
+                          # compute merger of vertex in TileLine1 in this copy with
+                          # TileLine2 in previous copy
                             ThatVertex = OldVertices[MergedWithVertex[VertIndex]]
                             ThatSin = \
                                 (
@@ -409,13 +480,27 @@ class TreadTiler(bpy.types.Operator) :
                     Faces.append(NewFace)
                 #end for
                 if join_ends :
+                    # add faces to close up the gap between JoinLine1 and JoinLine2
+                    Vertex1Prev, Vertex2Prev = JoinLine1[0], JoinLine2[0]
+                    for Vertex1, Vertex2 in zip(JoinLine1[1:-1], JoinLine2[1:-1]) :
+                        Faces.append \
+                          (
+                            [
+                                RenumberVertex[Vertex1Prev] +  i * NrVerticesPerTile,
+                                RenumberVertex[Vertex2Prev] +  i * NrVerticesPerTile,
+                                RenumberVertex[Vertex2] +  i * NrVerticesPerTile,
+                                RenumberVertex[Vertex1] +  i * NrVerticesPerTile,
+                            ]
+                          )
+                        Vertex1Prev, Vertex2Prev = Vertex1, Vertex2
+                    #end for
                     Faces.append \
                       (
                         [
-                            RenumberVertex[Line1[0]] +  i * NrVerticesPerTile,
-                            RenumberVertex[Line1[-1]] +  i * NrVerticesPerTile,
-                            (RenumberVertex[MergeVertex[Line2[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
-                            (RenumberVertex[MergeVertex[Line2[0]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
+                            RenumberVertex[Vertex1Prev] +  i * NrVerticesPerTile,
+                            RenumberVertex[Vertex2Prev] +  i * NrVerticesPerTile,
+                            (RenumberVertex[MergeVertex[JoinLine2[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
+                            (RenumberVertex[MergeVertex[JoinLine1[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
                         ]
                       )
                 #end if
