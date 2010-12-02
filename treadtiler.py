@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 0),
+        "version" : (0, 3, 1),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -218,13 +218,27 @@ class TreadTiler(bpy.types.Operator) :
                 raise Failure("selection must contain exactly two lines of vertices")
             #end if
             OldVertices = []
-              # for making my own copy of vertices from original mesh. This seems
+              # for making my own copy of coordinates from original mesh. This seems
               # to give more reliable results than repeatedly accessing the original
               # mesh. Why?
             Unconnected = set()
             Center = None
             for ThisVertex in TheMesh.vertices :
-                OldVertices.append(ThisVertex.co.copy())
+                OldVertices.append \
+                  (
+                    {
+                        "co" : ThisVertex.co.copy(),
+                        "bevel_weight" : ThisVertex.bevel_weight,
+                        "groups" : tuple
+                          (
+                            {
+                                "group" : g.group,
+                                "weight" : g.weight,
+                            }
+                          for g in ThisVertex.groups
+                          ),
+                    }
+                  )
                 if ThisVertex.index not in VertexEdges :
                     Unconnected.add(ThisVertex.index)
                 else :
@@ -249,8 +263,8 @@ class TreadTiler(bpy.types.Operator) :
                 raise Failure("selected lines must have at least two vertices")
             #end if
             Tolerance = 0.01
-            Slope1 = (OldVertices[TileLine1[-1]] - OldVertices[TileLine1[0]]).normalize()
-            Slope2 = (OldVertices[TileLine2[-1]] - OldVertices[TileLine2[0]]).normalize()
+            Slope1 = (OldVertices[TileLine1[-1]]["co"] - OldVertices[TileLine1[0]]["co"]).normalize()
+            Slope2 = (OldVertices[TileLine2[-1]]["co"] - OldVertices[TileLine2[0]]["co"]).normalize()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
@@ -263,8 +277,8 @@ class TreadTiler(bpy.types.Operator) :
                 raise Failure("selected lines are not parallel")
             #end if
             for i in range(1, len(TileLine1) - 1) :
-                Slope1 = (OldVertices[TileLine1[i]] - OldVertices[TileLine1[0]]).normalize()
-                Slope2 = (OldVertices[TileLine2[i]] - OldVertices[TileLine2[0]]).normalize()
+                Slope1 = (OldVertices[TileLine1[i]]["co"] - OldVertices[TileLine1[0]]["co"]).normalize()
+                Slope2 = (OldVertices[TileLine2[i]]["co"] - OldVertices[TileLine2[0]]["co"]).normalize()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -335,13 +349,13 @@ class TreadTiler(bpy.types.Operator) :
             #end if
             ReplicationVector =  \
                 (
-                    (OldVertices[TileLine2[0]] + OldVertices[TileLine2[-1]]) / 2
+                    (OldVertices[TileLine2[0]]["co"] + OldVertices[TileLine2[-1]]["co"]) / 2
                 -
-                    (OldVertices[TileLine1[0]] + OldVertices[TileLine1[-1]]) / 2
+                    (OldVertices[TileLine1[0]]["co"] + OldVertices[TileLine1[-1]]["co"]) / 2
                 )
                   # displacement between mid points of tiling edges
             RotationCenterVertex = Unconnected.pop()
-            RotationCenter = OldVertices[RotationCenterVertex]
+            RotationCenter = OldVertices[RotationCenterVertex]["co"]
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
@@ -355,7 +369,7 @@ class TreadTiler(bpy.types.Operator) :
             sys.stderr.write("RotationRadius = %s, axis = %s, NrCopies = %.2f * %.2f = %d\n" % (repr(RotationRadius), repr(RotationAxis), Replicate, Rescale, IntReplicate)) # debug
             bpy.ops.object.editmode_toggle()
             NewMesh = bpy.data.meshes.new(NewMeshName)
-            Vertices = []
+            NewVertices = []
             Faces = []
             # sin and cos of half-angle subtended by mesh at RotationCenter
             HalfWidthSin = ReplicationVector.magnitude / RotationRadiusLength / 2
@@ -403,6 +417,7 @@ class TreadTiler(bpy.types.Operator) :
                         mathutils.Matrix.Translation(- RotationCenter)
                     )
                 for VertIndex, ThisVertex in enumerate(OldVertices) :
+                    ThisVertex = ThisVertex["co"]
                     if not VertIndex in MergeVertex :
                       # vertex in TileLine2 in this copy will be merged with TileLine1 in next copy
                         ThisSin = \
@@ -423,7 +438,7 @@ class TreadTiler(bpy.types.Operator) :
                         if VertIndex in MergedWithVertex :
                           # compute merger of vertex in TileLine1 in this copy with
                           # TileLine2 in previous copy
-                            ThatVertex = OldVertices[MergedWithVertex[VertIndex]]
+                            ThatVertex = OldVertices[MergedWithVertex[VertIndex]]["co"]
                             ThatSin = \
                                 (
                                     ((ThatVertex - Center) * ReplicationUnitVector)
@@ -464,7 +479,8 @@ class TreadTiler(bpy.types.Operator) :
                                 )
                             ThisVertex = (ThisVertex + ThatVertex) / 2
                         #end if
-                        Vertices.append(ThisVertex)
+                        NewVertices.append(dict(OldVertices[VertIndex])) # shallow copy is enough
+                        NewVertices[-1]["co"] = ThisVertex
                       #end if
                 #end for
                 for ThisFace in TheMesh.faces :
@@ -505,12 +521,26 @@ class TreadTiler(bpy.types.Operator) :
                       )
                 #end if
             #end for
-            # Vertices.append(RotationCenter) # single merged rotation centre--not needed
-            # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(Vertices)) # debug
+            # NewVertices.append(RotationCenter) # single merged rotation centre--not needed
+            # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(NewVertices)) # debug
             sys.stderr.write("Creating new mesh with faces: %s\n" % repr(Faces)) # debug
-            NewMesh.from_pydata(Vertices, [], Faces)
-            NewMesh.update()
+            NewMesh.from_pydata(list(v["co"] for v in NewVertices), [], Faces)
             NewObj = bpy.data.objects.new(NewMeshName, NewMesh)
+            for g in TheObject.vertex_groups :
+                NewObj.vertex_groups.new(g.name)
+            #end for
+            for i in range(0, len(NewVertices)) :
+                NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
+                if False : # no way to set this, at least as of Blender 2.55.1 SVN r33387
+                    for g in NewVertices[i]["groups"] :
+                        NewMesh.vertices[i].groups.add \
+                          (
+                            bpy.types.VertexGroupElement(v["group"], v["weight"])
+                          )
+                     #end for
+                 #end if
+            #end for
+            NewMesh.update()
             context.scene.objects.link(NewObj)
             NewObj.matrix_local = TheObject.matrix_local
             NewObjName = NewObj.name
