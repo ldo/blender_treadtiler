@@ -531,14 +531,15 @@ class TreadTiler(bpy.types.Operator) :
             #end for
             for i in range(0, len(NewVertices)) :
                 NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
-                if False : # no way to set this, at least as of Blender 2.55.1 SVN r33387
-                    for g in NewVertices[i]["groups"] :
-                        NewMesh.vertices[i].groups.add \
-                          (
-                            bpy.types.VertexGroupElement(v["group"], v["weight"])
-                          )
-                     #end for
-                 #end if
+                for g in NewVertices[i]["groups"] :
+                    NewObj.vertex_groups.assign \
+                      (
+                        index = (i,), # not batching because each vertex might have different weight
+                        group = NewObj.vertex_groups[g["group"]],
+                        weight = g["weight"],
+                        type = "ADD"
+                      )
+                 #end for
             #end for
             NewMesh.update()
             context.scene.objects.link(NewObj)
