@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 1),
+        "version" : (0, 3, 2),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -152,6 +152,10 @@ class TreadTiler(bpy.types.Operator) :
                     #end for
                 #end for
             #end if
+            FaceSmooth = {}
+            for ThisFace in TheMesh.faces :
+                FaceSmooth[tuple(sorted(ThisFace.vertices))] = ThisFace.use_smooth
+            #end for
             # Find two continuous lines of selected vertices. Each line begins
             # and ends with a vertex connected to one other vertex, while the
             # intermediate vertices are each connected to two other vertices.
@@ -540,6 +544,27 @@ class TreadTiler(bpy.types.Operator) :
                         type = "ADD"
                       )
                  #end for
+            #end for
+            # copy smoothness settings to corresponding faces of new mesh
+            OldFaceSmooth = FaceSmooth
+            FaceSmooth = {}
+            for OldFaceVertices in OldFaceSmooth :
+                FaceVertices = []
+                for OldVertex in OldFaceVertices :
+                    if OldVertex in MergeVertex :
+                        NewVertex = RenumberVertex[MergeVertex[OldVertex]]
+                    else :
+                        NewVertex = RenumberVertex[OldVertex]
+                    #end if
+                    if NewVertex != None :
+                        FaceVertices.append(NewVertex)
+                    #end if
+                #end for
+                FaceSmooth[tuple(sorted(FaceVertices))] = OldFaceSmooth[tuple(sorted(OldFaceVertices))]
+            #end for
+            for ThisFace in NewMesh.faces :
+                FaceVertices = tuple(sorted((v % NrVerticesPerTile for v in sorted(ThisFace.vertices))))
+                ThisFace.use_smooth = FaceSmooth.get(FaceVertices, False)
             #end for
             NewMesh.update()
             context.scene.objects.link(NewObj)
