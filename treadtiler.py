@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 2),
+        "version" : (0, 3, 3),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -152,9 +152,13 @@ class TreadTiler(bpy.types.Operator) :
                     #end for
                 #end for
             #end if
-            FaceSmooth = {}
+            FaceSettings = {}
             for ThisFace in TheMesh.faces :
-                FaceSmooth[tuple(sorted(ThisFace.vertices))] = ThisFace.use_smooth
+                FaceSettings[tuple(sorted(ThisFace.vertices))] = \
+                    {
+                        "use_smooth" : ThisFace.use_smooth,
+                        "material_index" : ThisFace.material_index,
+                    }
             #end for
             # Find two continuous lines of selected vertices. Each line begins
             # and ends with a vertex connected to one other vertex, while the
@@ -533,6 +537,9 @@ class TreadTiler(bpy.types.Operator) :
             for g in TheObject.vertex_groups :
                 NewObj.vertex_groups.new(g.name)
             #end for
+            for m in TheMesh.materials :
+                NewMesh.materials.append(m)
+            #end for
             for i in range(0, len(NewVertices)) :
                 NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
                 for g in NewVertices[i]["groups"] :
@@ -545,10 +552,10 @@ class TreadTiler(bpy.types.Operator) :
                       )
                  #end for
             #end for
-            # copy smoothness settings to corresponding faces of new mesh
-            OldFaceSmooth = FaceSmooth
-            FaceSmooth = {}
-            for OldFaceVertices in OldFaceSmooth :
+            # copy material and smoothness settings to corresponding faces of new mesh
+            OldFaceSettings = FaceSettings
+            FaceSettings = {}
+            for OldFaceVertices in OldFaceSettings :
                 FaceVertices = []
                 for OldVertex in OldFaceVertices :
                     if OldVertex in MergeVertex :
@@ -560,11 +567,15 @@ class TreadTiler(bpy.types.Operator) :
                         FaceVertices.append(NewVertex)
                     #end if
                 #end for
-                FaceSmooth[tuple(sorted(FaceVertices))] = OldFaceSmooth[tuple(sorted(OldFaceVertices))]
+                FaceSettings[tuple(sorted(FaceVertices))] = OldFaceSettings[tuple(sorted(OldFaceVertices))]
             #end for
             for ThisFace in NewMesh.faces :
                 FaceVertices = tuple(sorted((v % NrVerticesPerTile for v in sorted(ThisFace.vertices))))
-                ThisFace.use_smooth = FaceSmooth.get(FaceVertices, False)
+                if FaceVertices in FaceSettings :
+                    ThisFaceSettings = FaceSettings[FaceVertices]
+                    ThisFace.use_smooth = ThisFaceSettings["use_smooth"]
+                    ThisFace.material_index = ThisFaceSettings["material_index"]
+                #end if
             #end for
             NewMesh.update()
             context.scene.objects.link(NewObj)
