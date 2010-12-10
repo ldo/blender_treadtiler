@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 3, 3),
+        "version" : (0, 4, 0),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -84,6 +84,7 @@ class TreadTilerPanel(bpy.types.Panel) :
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
         TheCol.prop(context.scene, "treadtiler_join_ends")
+        TheCol.prop(context.scene, "treadtiler_smooth_join")
         TheCol.operator("mesh.TileTread", text = "Tile Tread")
     #end draw
 
@@ -121,6 +122,7 @@ class TreadTiler(bpy.types.Operator) :
               # Have to get out of edit mode and back in again in order
               # to synchronize possibly cached state of vertex selections
             join_ends = context.scene.treadtiler_join_ends
+            smooth_join = context.scene.treadtiler_smooth_join
             if True : # debug
                 for ThisVertex in TheMesh.vertices :
                     sys.stderr.write("v%d: (%.2f, %.2f, %.2f) %s\n" % ((ThisVertex.index,) + tuple(ThisVertex.co) + (["n", "y"][ThisVertex.select],)))
@@ -575,6 +577,8 @@ class TreadTiler(bpy.types.Operator) :
                     ThisFaceSettings = FaceSettings[FaceVertices]
                     ThisFace.use_smooth = ThisFaceSettings["use_smooth"]
                     ThisFace.material_index = ThisFaceSettings["material_index"]
+                else :
+                   ThisFace.use_smooth = smooth_join
                 #end if
             #end for
             NewMesh.update()
@@ -600,16 +604,25 @@ class TreadTiler(bpy.types.Operator) :
 #end TreadTiler
 
 def register() :
+    # makes more sense to me to have the properties attached to the Context
+    # rather than the Scene, but that doesn't work.
     bpy.types.Scene.treadtiler_join_ends = bpy.props.BoolProperty \
       (
         name = "Join Ends",
         description = "Join the inner edges to make a torus",
         default = False
       )
+    bpy.types.Scene.treadtiler_smooth_join = bpy.props.BoolProperty \
+      (
+        name = "Smooth Join",
+        description = "Smooth the faces created by joining the inner edges",
+        default = False
+      )
 #end register
 
 def unregister() :
     del bpy.types.Scene.treadtiler_join_ends
+    del bpy.types.Scene.treadtiler_smooth_join
 #end unregister
 
 if __name__ == "__main__" :
