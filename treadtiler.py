@@ -542,6 +542,12 @@ class TreadTiler(bpy.types.Operator) :
             for m in TheMesh.materials :
                 NewMesh.materials.append(m)
             #end for
+            if len(TheMesh.materials) != 0 and join_ends and smooth_join :
+                NewMesh.materials.append(TheMesh.materials[0])
+                JoinedFaceMaterial = len(NewMesh.materials) - 1 # 0-based
+            else :
+                JoinedFaceMaterial = None
+            #end if
             for i in range(0, len(NewVertices)) :
                 NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
                 for g in NewVertices[i]["groups"] :
@@ -579,6 +585,9 @@ class TreadTiler(bpy.types.Operator) :
                     ThisFace.material_index = ThisFaceSettings["material_index"]
                 else :
                    ThisFace.use_smooth = smooth_join
+                   if JoinedFaceMaterial != None :
+                       ThisFace.material_index = JoinedFaceMaterial
+                   #end if
                 #end if
             #end for
             NewMesh.update()
