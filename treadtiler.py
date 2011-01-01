@@ -2,7 +2,7 @@
 # This add-on script for Blender 2.5 turns a mesh object into the
 # tread around the circumference of a tyre.
 #
-# Copyright 2010 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2010, 2011 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 4, 1),
+        "version" : (0, 5, 0),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -70,46 +70,47 @@ def VecNearlyEqual(X, Y, Tol) :
     return Result
 #end VecNearlyEqual
 
-class TreadTilerPanel(bpy.types.Panel) :
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_label = "Tread Tiler"
-    bl_context = "mesh_edit"
+#end TreadTilerPanel
 
-    #@classmethod
-    #def poll(santa, context) :
-    #    return context.mode == "EDIT_MESH"
-    ##end poll
+class MESH_OT_TileTread(bpy.types.Operator) :
+    # bl_idname = "mesh.TileTread"
+    bl_label = "Tile Tread"
+    bl_context = "mesh_edit"
+    bl_options = {"REGISTER", "UNDO"}
+
+    join_ends = bpy.props.BoolProperty \
+      (
+        name = "Join Ends",
+        description = "Join the inner edges to make a torus",
+        default = False
+      )
+    smooth_join = bpy.props.BoolProperty \
+      (
+        name = "Smooth Join",
+        description = "Smooth the faces created by joining the inner edges",
+        default = False
+      )
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
-        TheCol.prop(context.scene, "treadtiler_join_ends")
-        TheCol.prop(context.scene, "treadtiler_smooth_join")
-        TheCol.operator("mesh.TileTread", text = "Tile Tread")
+        TheCol.prop(self, "join_ends")
+        TheCol.prop(self, "smooth_join")
     #end draw
 
-#end TreadTilerPanel
-
-class TreadTiler(bpy.types.Operator) :
-    bl_idname = "mesh.TileTread"
-    bl_label = "Tile Tread"
-    bl_register = True
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(santa, context) :
-        return context.mode == "EDIT_MESH"
-    #end poll
-
-    def execute(self, context) :
+    def action_common(self, context, redoing) :
         save_mesh_select_mode = tuple(context.tool_settings.mesh_select_mode)
         try :
-            if context.mode != "EDIT_MESH" :
-                raise Failure("not editing a mesh")
-            #end if
-            TheObject = context.scene.objects.active
-            if TheObject == None or not TheObject.select :
-                raise Failure("no selected object")
+            if not redoing :
+                if context.mode != "EDIT_MESH" :
+                    raise Failure("not editing a mesh")
+                #end if
+                TheObject = context.scene.objects.active
+                if TheObject == None or not TheObject.select :
+                    raise Failure("no selected object")
+                #end if
+                self.orig_object_name = TheObject.name
+            else :
+                TheObject = context.scene.objects[self.orig_object_name]
             #end if
             TheMesh = TheObject.data
             if type(TheMesh) != bpy.types.Mesh :
@@ -117,12 +118,12 @@ class TreadTiler(bpy.types.Operator) :
             #end if
             context.tool_settings.mesh_select_mode = (True, False, False) # vertex selection mode
             NewMeshName = TheObject.name + " tread"
-            bpy.ops.object.editmode_toggle()
-            bpy.ops.object.editmode_toggle()
-              # Have to get out of edit mode and back in again in order
-              # to synchronize possibly cached state of vertex selections
-            join_ends = context.scene.treadtiler_join_ends
-            smooth_join = context.scene.treadtiler_smooth_join
+            if not redoing :
+                bpy.ops.object.editmode_toggle()
+                bpy.ops.object.editmode_toggle()
+                  # Have to get out of edit mode and back in again in order
+                  # to synchronize possibly cached state of vertex selections
+            #end if
             if True : # debug
                 for ThisVertex in TheMesh.vertices :
                     sys.stderr.write("v%d: (%.2f, %.2f, %.2f) %s\n" % ((ThisVertex.index,) + tuple(ThisVertex.co) + (["n", "y"][ThisVertex.select],)))
@@ -143,7 +144,7 @@ class TreadTiler(bpy.types.Operator) :
                     VertexEdges[ThisVertex].append(ThisEdge)
                 #end for
             #end for
-            if join_ends :
+            if self.join_ends :
                 EdgeFaces = {} # mapping from edge to adjacent faces
                 for ThisFace in TheMesh.faces :
                     for ThisEdge in ThisFace.edge_keys :
@@ -297,7 +298,7 @@ class TreadTiler(bpy.types.Operator) :
                     raise Failure("selected lines are not parallel")
                 #end if
             #end for
-            if join_ends :
+            if self.join_ends :
                 # Find two continuous lines of vertices connecting the ends of
                 # the selected lines. These will be joined with additional faces
                 # to complete the torus in the generated mesh.
@@ -377,7 +378,9 @@ class TreadTiler(bpy.types.Operator) :
             IntReplicate = round(Replicate)
             Rescale = IntReplicate / Replicate
             sys.stderr.write("RotationRadius = %s, axis = %s, NrCopies = %.2f * %.2f = %d\n" % (repr(RotationRadius), repr(RotationAxis), Replicate, Rescale, IntReplicate)) # debug
-            bpy.ops.object.editmode_toggle()
+            if not redoing :
+                bpy.ops.object.editmode_toggle()
+            #end if
             NewMesh = bpy.data.meshes.new(NewMeshName)
             NewVertices = []
             Faces = []
@@ -505,7 +508,7 @@ class TreadTiler(bpy.types.Operator) :
                     #end for
                     Faces.append(NewFace)
                 #end for
-                if join_ends :
+                if self.join_ends :
                     # add faces to close up the gap between JoinLine1 and JoinLine2
                     Vertex1Prev, Vertex2Prev = JoinLine1[0], JoinLine2[0]
                     for Vertex1, Vertex2 in zip(JoinLine1[1:-1], JoinLine2[1:-1]) :
@@ -542,7 +545,7 @@ class TreadTiler(bpy.types.Operator) :
             for m in TheMesh.materials :
                 NewMesh.materials.append(m)
             #end for
-            if len(TheMesh.materials) != 0 and join_ends and smooth_join :
+            if len(TheMesh.materials) != 0 and self.join_ends and self.smooth_join :
                 NewMesh.materials.append(TheMesh.materials[0])
                 JoinedFaceMaterial = len(NewMesh.materials) - 1 # 0-based
             else :
@@ -584,7 +587,7 @@ class TreadTiler(bpy.types.Operator) :
                     ThisFace.use_smooth = ThisFaceSettings["use_smooth"]
                     ThisFace.material_index = ThisFaceSettings["material_index"]
                 else :
-                   ThisFace.use_smooth = smooth_join
+                   ThisFace.use_smooth = self.smooth_join
                    if JoinedFaceMaterial != None :
                        ThisFace.material_index = JoinedFaceMaterial
                    #end if
@@ -603,35 +606,36 @@ class TreadTiler(bpy.types.Operator) :
             # all done
             Status = {"FINISHED"}
         except Failure as Why :
+            sys.stderr.write("Failure: %s\n" % Why.Msg) # debug
             self.report({"ERROR"}, Why.Msg)
             Status = {"CANCELLED"}
         #end try
         context.tool_settings.mesh_select_mode = save_mesh_select_mode
         return Status
+    #end action_common
+
+    def execute(self, context) :
+        sys.stderr.write("TreadTiler execute\n") # debug
+        return self.action_common(context, True)
     #end execute
 
-#end TreadTiler
+    def invoke(self, context, event) :
+        sys.stderr.write("TreadTiler invoke\n") # debug
+        return self.action_common(context, False)
+    #end invoke
+
+#end MESH_OT_TileTread
+
+def add_invoke_button(self, context) :
+    self.layout.operator("MESH_OT_TileTread", text = "Tile Tread")
+#end add_invoke_button
 
 def register() :
-    # makes more sense to me to have the properties attached to the Context
-    # rather than the Scene, but that doesn't work.
-    bpy.types.Scene.treadtiler_join_ends = bpy.props.BoolProperty \
-      (
-        name = "Join Ends",
-        description = "Join the inner edges to make a torus",
-        default = False
-      )
-    bpy.types.Scene.treadtiler_smooth_join = bpy.props.BoolProperty \
-      (
-        name = "Smooth Join",
-        description = "Smooth the faces created by joining the inner edges",
-        default = False
-      )
+    bpy.types.VIEW3D_PT_tools_meshedit.append(add_invoke_button)
 #end register
 
 def unregister() :
-    del bpy.types.Scene.treadtiler_join_ends
-    del bpy.types.Scene.treadtiler_smooth_join
+    bpy.types.VIEW3D_PT_tools_meshedit.remove(add_invoke_button)
 #end unregister
 
 if __name__ == "__main__" :
