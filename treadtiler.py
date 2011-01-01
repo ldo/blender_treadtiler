@@ -631,7 +631,9 @@ class MESH_OT_TileTread(bpy.types.Operator) :
 #end MESH_OT_TileTread
 
 def add_invoke_button(self, context) :
-    self.layout.operator("MESH_OT_TileTread", text = "Tile Tread")
+    TheCol = self.layout.column(align = True) # gives a nicer grouping of my items
+    TheCol.label("Tread Tiler:")
+    TheCol.operator("MESH_OT_TileTread", text = "Tile Tread")
 #end add_invoke_button
 
 def register() :
