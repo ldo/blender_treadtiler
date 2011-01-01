@@ -108,6 +108,10 @@ class MESH_OT_TileTread(bpy.types.Operator) :
                 if TheObject == None or not TheObject.select :
                     raise Failure("no selected object")
                 #end if
+                # save the name of the object so I can find it again
+                # when I'm reexecuted. Can't save a direct reference,
+                # as that is likely to become invalid. Blender guarantees
+                # the name is unique anyway.
                 self.orig_object_name = TheObject.name
             else :
                 TheObject = context.scene.objects[self.orig_object_name]
