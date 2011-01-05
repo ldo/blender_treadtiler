@@ -72,8 +72,8 @@ def VecNearlyEqual(X, Y, Tol) :
 
 #end TreadTilerPanel
 
-class MESH_OT_TileTread(bpy.types.Operator) :
-    # bl_idname = "mesh.TileTread"
+class TileTread(bpy.types.Operator) :
+    bl_idname = "mesh.TileTread"
     bl_label = "Tile Tread"
     bl_context = "mesh_edit"
     bl_options = {"REGISTER", "UNDO"}
@@ -628,12 +628,12 @@ class MESH_OT_TileTread(bpy.types.Operator) :
         return self.action_common(context, False)
     #end invoke
 
-#end MESH_OT_TileTread
+#end TileTread
 
 def add_invoke_button(self, context) :
     TheCol = self.layout.column(align = True) # gives a nicer grouping of my items
     TheCol.label("Tread Tiler:")
-    TheCol.operator("MESH_OT_TileTread", text = "Tile Tread")
+    TheCol.operator("mesh.TileTread", text = "Tile Tread")
 #end add_invoke_button
 
 def register() :
