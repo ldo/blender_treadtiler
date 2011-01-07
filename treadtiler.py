@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 0),
+        "version" : (0, 5, 1),
         "blender" : (2, 5, 5),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -90,11 +90,17 @@ class TileTread(bpy.types.Operator) :
         description = "Smooth the faces created by joining the inner edges",
         default = False
       )
+    rotation_center_offset = bpy.props.FloatVectorProperty \
+      (
+        name = "Rotation Centre Offset",
+        description = "Offset adjustment to the centre of rotation",
+      )
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
         TheCol.prop(self, "join_ends")
         TheCol.prop(self, "smooth_join")
+        TheCol.prop(self, "rotation_center_offset")
     #end draw
 
     def action_common(self, context, redoing) :
@@ -373,6 +379,15 @@ class TileTread(bpy.types.Operator) :
             RotationCenter = OldVertices[RotationCenterVertex]["co"]
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
+            if redoing :
+                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_center_offset[1]
+                RotationRadius += RotationAxis * self.rotation_center_offset[2]
+                RotationRadius *= self.rotation_center_offset[0]
+                RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
+                RotationCenter = Center - RotationRadius
+            else :
+                self.rotation_center_offset[:] = (1, 0, 0)
+            #end if
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
             sys.stderr.write("Center = %s\n" % repr(Center)) # debug
             sys.stderr.write("RotationCenter = %s\n" % repr(RotationCenter)) # debug
@@ -620,6 +635,7 @@ class TileTread(bpy.types.Operator) :
 
     def execute(self, context) :
         sys.stderr.write("TreadTiler execute\n") # debug
+        sys.stderr.write("rotation_center_offset type %s = %s\n" % (repr(type(self.rotation_center_offset)), repr(tuple(self.rotation_center_offset)))) # debug
         return self.action_common(context, True)
     #end execute
 
