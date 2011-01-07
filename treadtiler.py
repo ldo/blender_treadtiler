@@ -90,17 +90,17 @@ class TileTread(bpy.types.Operator) :
         description = "Smooth the faces created by joining the inner edges",
         default = False
       )
-    rotation_center_offset = bpy.props.FloatVectorProperty \
+    rotation_center_adjust = bpy.props.FloatVectorProperty \
       (
-        name = "Rotation Centre Offset",
-        description = "Offset adjustment to the centre of rotation",
+        name = "Rotation Centre Adjust",
+        description = "Radius and offset adjustments to the centre of rotation",
       )
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
         TheCol.prop(self, "join_ends")
         TheCol.prop(self, "smooth_join")
-        TheCol.prop(self, "rotation_center_offset")
+        TheCol.prop(self, "rotation_center_adjust")
     #end draw
 
     def action_common(self, context, redoing) :
@@ -380,13 +380,13 @@ class TileTread(bpy.types.Operator) :
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             if redoing :
-                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_center_offset[1]
-                RotationRadius += RotationAxis * self.rotation_center_offset[2]
-                RotationRadius *= self.rotation_center_offset[0]
+                RotationRadius = RotationRadius.normalize() * self.rotation_center_adjust[0]
+                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_center_adjust[1]
+                RotationRadius += RotationAxis * self.rotation_center_adjust[2]
                 RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
                 RotationCenter = Center - RotationRadius
             else :
-                self.rotation_center_offset[:] = (1, 0, 0)
+                self.rotation_center_adjust[:] = (RotationRadius.magnitude, 0, 0)
             #end if
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
             sys.stderr.write("Center = %s\n" % repr(Center)) # debug
@@ -635,7 +635,7 @@ class TileTread(bpy.types.Operator) :
 
     def execute(self, context) :
         sys.stderr.write("TreadTiler execute\n") # debug
-        sys.stderr.write("rotation_center_offset type %s = %s\n" % (repr(type(self.rotation_center_offset)), repr(tuple(self.rotation_center_offset)))) # debug
+        sys.stderr.write("rotation_center_adjust type %s = %s\n" % (repr(type(self.rotation_center_adjust)), repr(tuple(self.rotation_center_adjust)))) # debug
         return self.action_common(context, True)
     #end execute
 
