@@ -622,6 +622,9 @@ class TileTread(bpy.types.Operator) :
                 ThisVertex.select = True # usual Blender default for newly-created object
             #end for
             NewMesh.update()
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.normals_make_consistent()
+            bpy.ops.object.editmode_toggle()
             # all done
             Status = {"FINISHED"}
         except Failure as Why :
