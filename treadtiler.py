@@ -90,17 +90,36 @@ class TileTread(bpy.types.Operator) :
         description = "Smooth the faces created by joining the inner edges",
         default = False
       )
-    rotation_center_adjust = bpy.props.FloatVectorProperty \
+    rotation_radius = bpy.props.FloatProperty \
       (
-        name = "Rotation Centre Adjust",
-        description = "Radius and offset adjustments to the centre of rotation",
+        "Radius",
+        description = "Adjust radius of rotation centre",
+        subtype = "DISTANCE",
+        unit = "LENGTH"
+      )
+    rotation_tilt = bpy.props.FloatProperty \
+      (
+        "Tilt",
+        description = "Adjust angle around rotation axis",
+        subtype = "DISTANCE",
+        unit = "LENGTH"
+      )
+    rotation_asym = bpy.props.FloatProperty \
+      (
+        "Asym",
+        description = "Adjust angle around tangent to circumference",
+        subtype = "DISTANCE",
+        unit = "LENGTH"
       )
 
     def draw(self, context) :
         TheCol = self.layout.column(align = True)
         TheCol.prop(self, "join_ends")
         TheCol.prop(self, "smooth_join")
-        TheCol.prop(self, "rotation_center_adjust")
+        TheCol.label("Rotation Centre Adjust:")
+        TheCol.prop(self, "rotation_radius")
+        TheCol.prop(self, "rotation_tilt")
+        TheCol.prop(self, "rotation_asym")
     #end draw
 
     def action_common(self, context, redoing) :
@@ -380,13 +399,15 @@ class TileTread(bpy.types.Operator) :
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             if redoing :
-                RotationRadius = RotationRadius.normalize() * self.rotation_center_adjust[0]
-                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_center_adjust[1]
-                RotationRadius += RotationAxis * self.rotation_center_adjust[2]
+                RotationRadius = RotationRadius.normalize() * self.rotation_radius
+                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_tilt
+                RotationRadius += RotationAxis * self.rotation_asym
                 RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
                 RotationCenter = Center - RotationRadius
             else :
-                self.rotation_center_adjust[:] = (RotationRadius.magnitude, 0, 0)
+                self.rotation_radius = RotationRadius.magnitude
+                self.rotation_tilt = 0
+                self.rotation_asym = 0
             #end if
             sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
             sys.stderr.write("Center = %s\n" % repr(Center)) # debug
@@ -638,7 +659,6 @@ class TileTread(bpy.types.Operator) :
 
     def execute(self, context) :
         sys.stderr.write("TreadTiler execute\n") # debug
-        sys.stderr.write("rotation_center_adjust type %s = %s\n" % (repr(type(self.rotation_center_adjust)), repr(tuple(self.rotation_center_adjust)))) # debug
         return self.action_common(context, True)
     #end execute
 
