@@ -34,9 +34,9 @@ a
 </HEAD>
 <BODY STYLE="background-color : #F4F4F0">
 
-<DIV CLASS="h1">TreadTiler 0.4.0 User Guide<BR>
+<DIV CLASS="h1">TreadTiler 0.5.1 User Guide<BR>
 <A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
-2010 December 10</DIV>
+2011 January 10</DIV>
 <DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
 <OL>
 <LI><A HREF="#Introduction">Introduction</A>
@@ -77,10 +77,11 @@ checkbox.
 <P>To use TreadTiler, the basic steps are:
 <OL>
 <LI>Create a mesh that will be replicated to make the tyre-tread pattern
-<LI>Add a single unconnected point to the mesh that will serve as the centre of rotation
+<LI>Add a single unconnected point to the mesh that will serve as the initial centre of rotation
 <LI>Select two contiguous lines of vertices along the two opposite sides of the
 mesh that will adjoin in successive copies
 <LI>Invoke TreadTiler.
+<LI>Make any further adjustments necessary to the generated mesh.
 </OL>
 
 <DIV CLASS="h3"><A NAME="MeshCreation"></A>Creating The Mesh</DIV>
@@ -135,13 +136,13 @@ match them up.
 <P>Instead, you can tell TreadTiler to close the ring as part of the process
 of generating the complete tyre (see below).
 
-<DIV CLASS="h3"><A NAME="RotationCentre"></A>Defining The Centre Of Rotation</DIV>
+<DIV CLASS="h3"><A NAME="RotationCentre"></A>Defining The Initial Centre Of Rotation</DIV>
 <P>Now we need to add a single unconnected vertex. This will define the centre
-around which the mesh pattern will be rotated.
-<P>In order to ensure this is properly located with respect to the tread pattern,
-you can construct this point from, say, the four corners of the tread mesh. Make
-sure nothing is selected, switch to vertex-selection mode, and select four corners
-of the tread pattern:
+around which the mesh pattern will initially be rotated. Don&#8217;t worry about getting
+this absolutely exact&#8212;you can make adjustments to the rotation afterwards.
+<P>One way to locate this with respect to the tread pattern is to construct the point
+from, say, the four corners of the tread mesh. Make sure nothing is selected, switch
+to vertex-selection mode, and select four corners of the tread pattern:
 <DIV CLASS="figure"><IMG SRC="TreadMesh8.png"></DIV>
 <P>Duplicate these vertices (<B>SHIFT+D</B>), constrain their motion to the Z-axis
 (press <B>Z</B>) and move them some distance away from the pattern mesh:
@@ -164,23 +165,35 @@ you should see the TreadTiler panel appear in the Tool Shelf on the left of the 
 (probably near the bottom, press <B>T</B> to display the Tool Shelf if it’s not
 already visible):
 <DIV CLASS="figure"><IMG SRC="TreadMesh11.png"></DIV>
+<P>Simply click the “Tile Tread” button to generate the initial mesh:
+<DIV CLASS="figure"><IMG SRC="TreadMesh12.png"></DIV>
+<P>As it appears you should also see the following panel appear at the bottom of the Tool Shelf:
+<DIV CLASS="figure"><IMG SRC="TreadMesh13.png"></DIV>
+<P>If instead you see any error messages about not properly selecting two lines of
+vertices, or not having a single unconnected point to be the rotation centre, then
+review the steps above and make sure you properly followed them.
 
 <DIV CLASS="h3"><A NAME="CompleteTorus"></A>Completing The Torus</DIV>
 <P>Check the “Join Ends” box to have TreadTiler complete the torus. You can also
 check “Smooth Join” to have smooth shading automatically applied to the faces
-created to complete the torus. Press the “Tile Tread” button. If you see any error
-messages about not properly selecting two lines of vertices, or not having a single
-unconnected point to be the rotation centre, then review the steps above and make
-sure you properly followed them.
-<P>Otherwise, all going well, you should see a new mesh object appear:
-<DIV CLASS="figure"><IMG SRC="TreadMesh12.png"></DIV>
+created to complete the torus.
+<P>Under the label “Rotation Centre Adjust:”, you will see three numbers displayed
+that you can adjust. If you hover over these with the mouse, tooltips will appear
+explaining what they are:
+<OL>
+<LI>The radius of rotation, governing the size of the generated mesh. The initial
+value of this comes from the distance to the rotation centre vertex that you specified.
+<LI>A “tilt” adjustment, which can be used to fine-tune how well adjacent copies
+of the tread pattern align together.
+<LI>An “asymmetry” adjustment, that can be used to twist the tread pattern towards
+one side or the other.
+</OL>
 <P>The number of copies of the replicated mesh pattern are automatically computed
 based on the closest whole-integer number of copies that can be fitted around
 the circumference of the rotation around the centre vertex (with the appropriate
-scaling adjustment). If you want more copies for a bigger ring, just move the
-rotation centre vertex further away from the pattern, and generate the tyre
-again:
-<DIV CLASS="figure"><IMG SRC="TreadMesh13.png"></DIV>
+scaling adjustment). If you want more copies for a bigger ring, just increase
+the rotation radius:
+<DIV CLASS="figure"><IMG SRC="TreadMesh14.png"></DIV>
 <P>Note that the original mesh object you created is not deleted or modified
 in any way; instead, a new mesh object is created, taking the name of the old
 one and adding “ tread” to the end. Thus, if you followed the above example closely,
@@ -188,12 +201,12 @@ the original mesh would have its default name of “Grid”, so the new mesh wou
 be called “Grid tread”.
 <P>Think maybe it looks too angular? Go back to the original mesh pattern, and add
 some more vertices in the middle, perhaps by doing a loop cut (<B>CTRL+R</B>):
-<DIV CLASS="figure"><IMG SRC="TreadMesh14.png"></DIV>
 <DIV CLASS="figure"><IMG SRC="TreadMesh15.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh16.png"></DIV>
 <P>Now when you rerun TreadTiler (don’t forget to reselect the vertices along the
 two sides to be joined), it will apply a radial displacement to the
 extra vertices to give more of a curve to the shape:
-<DIV CLASS="figure"><IMG SRC="TreadMesh16.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh17.png"></DIV>
 <P> The effect is quite subtle here, but will be more pronounced if the tyre radius
 is made smaller.
 
