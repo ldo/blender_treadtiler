@@ -9,6 +9,6 @@ Start with docs/index.html.
 Note that Blender 2.5 is still in prerelease and undergoing continuing
 development. Its Python APIs are still subject to change, so this script
 could very well break at some point. This version has been successfully
-tested with Blender 2.55 SVN r32940.
+tested with Blender 2.56a SVN r34116.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
