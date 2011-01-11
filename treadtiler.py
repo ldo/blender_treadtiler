@@ -25,8 +25,8 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 1),
-        "blender" : (2, 5, 5),
+        "version" : (0, 5, 2),
+        "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
         "description" :
@@ -594,10 +594,9 @@ class TileTread(bpy.types.Operator) :
             for i in range(0, len(NewVertices)) :
                 NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
                 for g in NewVertices[i]["groups"] :
-                    NewObj.vertex_groups.assign \
+                    NewObj.vertex_groups[g["group"]].add \
                       (
                         index = (i,), # not batching because each vertex might have different weight
-                        group = NewObj.vertex_groups[g["group"]],
                         weight = g["weight"],
                         type = "ADD"
                       )
