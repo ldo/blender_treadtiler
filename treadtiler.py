@@ -426,6 +426,9 @@ class TileTread(bpy.types.Operator) :
             Faces = []
             # sin and cos of half-angle subtended by mesh at RotationCenter
             HalfWidthSin = ReplicationVector.magnitude / RotationRadiusLength / 2
+            if abs(HalfWidthSin) > 1 :
+                raise Failure("rotation radius too small")
+            #end if
             HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
             ReplicationUnitVector = ReplicationVector.copy().normalize()
             RotationRadiusUnitVector = RotationRadius.copy().normalize()
