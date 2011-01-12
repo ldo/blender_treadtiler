@@ -629,10 +629,10 @@ class TileTread(bpy.types.Operator) :
                     ThisFace.use_smooth = ThisFaceSettings["use_smooth"]
                     ThisFace.material_index = ThisFaceSettings["material_index"]
                 else :
-                   ThisFace.use_smooth = self.smooth_join
-                   if JoinedFaceMaterial != None :
-                       ThisFace.material_index = JoinedFaceMaterial
-                   #end if
+                    ThisFace.use_smooth = self.smooth_join
+                    if JoinedFaceMaterial != None :
+                        ThisFace.material_index = JoinedFaceMaterial
+                    #end if
                 #end if
             #end for
             NewMesh.update()
