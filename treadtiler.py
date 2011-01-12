@@ -153,17 +153,6 @@ class TileTread(bpy.types.Operator) :
                   # Have to get out of edit mode and back in again in order
                   # to synchronize possibly cached state of vertex selections
             #end if
-            if True : # debug
-                for ThisVertex in TheMesh.vertices :
-                    sys.stderr.write("v%d: (%.2f, %.2f, %.2f) %s\n" % ((ThisVertex.index,) + tuple(ThisVertex.co) + (["n", "y"][ThisVertex.select],)))
-                #end for
-                for ThisEdge in TheMesh.edges :
-                    sys.stderr.write("e%d: %s\n" % (ThisEdge.index, repr(tuple(v for v in ThisEdge.vertices))))
-                #end for
-                for ThisFace in TheMesh.faces :
-                    sys.stderr.write("f%d: %s\n" % (ThisFace.index, repr(ThisFace.edge_keys)))
-                #end for
-            #end if
             VertexEdges = {} # mapping from vertex to connected edges
             for ThisEdge in TheMesh.edges :
                 for ThisVertex in ThisEdge.vertices :
@@ -249,7 +238,6 @@ class TileTread(bpy.types.Operator) :
                             ThisLine.append(NextVertex)
                             ThatVertex = NextVertex
                         #end while
-                        # sys.stderr.write("selected line: %s\n" % repr(ThisLine)) # debug
                         SelectedLines.append(ThisLine)
                     #end if
                 #end if
@@ -355,7 +343,6 @@ class TileTread(bpy.types.Operator) :
                     #end if
                     Vertex1Next, Vertex2Next = None, None
                     for ThisEdge in VertexEdges[Vertex1] :
-                        sys.stderr.write("Edge %s has %d faces.\n" % (repr(tuple(ThisEdge.vertices)), len(EdgeFaces[tuple(ThisEdge.vertices)]))) # debug
                         if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
                             for ThisVertex in ThisEdge.vertices :
                                 if ThisVertex != Vertex1 and ThisVertex != Vertex1Prev :
@@ -368,7 +355,6 @@ class TileTread(bpy.types.Operator) :
                         #end if
                     #end for
                     for ThisEdge in VertexEdges[Vertex2] :
-                        sys.stderr.write("Edge %s has %d faces.\n" % (repr(tuple(ThisEdge.vertices)), len(EdgeFaces[tuple(ThisEdge.vertices)]))) # debug
                         if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
                             for ThisVertex in ThisEdge.vertices :
                                 if ThisVertex != Vertex2 and ThisVertex != Vertex2Prev :
@@ -450,7 +436,6 @@ class TileTread(bpy.types.Operator) :
             #end for
             NrVerticesPerTile = len(OldVertices) - len(TileLine2) - 1
             TotalNrVertices = NrVerticesPerTile * IntReplicate
-            sys.stderr.write("RenumberVertex = %s\n" % repr(RenumberVertex)) # debug
             for i in range(0, IntReplicate) :
                 ThisXForm = \
                     (
@@ -577,9 +562,6 @@ class TileTread(bpy.types.Operator) :
                       )
                 #end if
             #end for
-            # NewVertices.append(RotationCenter) # single merged rotation centre--not needed
-            # sys.stderr.write("Creating new mesh with vertices: %s\n" % repr(NewVertices)) # debug
-            sys.stderr.write("Creating new mesh with faces: %s\n" % repr(Faces)) # debug
             NewMesh.from_pydata(list(v["co"] for v in NewVertices), [], Faces)
             NewObj = bpy.data.objects.new(NewMeshName, NewMesh)
             for g in TheObject.vertex_groups :
@@ -660,12 +642,10 @@ class TileTread(bpy.types.Operator) :
     #end action_common
 
     def execute(self, context) :
-        sys.stderr.write("TreadTiler execute\n") # debug
         return self.action_common(context, True)
     #end execute
 
     def invoke(self, context, event) :
-        sys.stderr.write("TreadTiler invoke\n") # debug
         return self.action_common(context, False)
     #end invoke
 
