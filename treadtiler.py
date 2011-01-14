@@ -25,7 +25,7 @@ bl_addon_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 2),
+        "version" : (0, 5, 3),
         "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -101,15 +101,13 @@ class TileTread(bpy.types.Operator) :
       (
         "Tilt",
         description = "Adjust angle around rotation axis",
-        subtype = "DISTANCE",
-        unit = "LENGTH"
+        subtype = "ANGLE"
       )
     rotation_asym = bpy.props.FloatProperty \
       (
         "Asym",
         description = "Adjust angle around tangent to circumference",
-        subtype = "DISTANCE",
-        unit = "LENGTH"
+        subtype = "ANGLE"
       )
 
     def draw(self, context) :
@@ -385,9 +383,14 @@ class TileTread(bpy.types.Operator) :
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
             if redoing :
-                RotationRadius = RotationRadius.normalize() * self.rotation_radius
-                RotationRadius += ReplicationVector.copy().normalize() * self.rotation_tilt
-                RotationRadius += RotationAxis * self.rotation_asym
+                RotationRadius =  \
+                    (
+                        RotationRadius.normalize() * self.rotation_radius
+                    *
+                        mathutils.Matrix.Rotation(self.rotation_tilt, 4, RotationAxis + RotationRadius)
+                    *
+                        mathutils.Matrix.Rotation(self.rotation_asym, 4, ReplicationVector.copy().normalize())
+                    )
                 RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
                 RotationCenter = Center - RotationRadius
             else :
