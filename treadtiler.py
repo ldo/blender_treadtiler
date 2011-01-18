@@ -21,7 +21,7 @@ import sys # debug
 import bpy
 import mathutils
 
-bl_addon_info = \
+bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
