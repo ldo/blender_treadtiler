@@ -25,7 +25,7 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 4),
+        "version" : (0, 5, 5),
         "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -73,7 +73,7 @@ def VecNearlyEqual(X, Y, Tol) :
 #end TreadTilerPanel
 
 class TileTread(bpy.types.Operator) :
-    bl_idname = "mesh.TileTread"
+    bl_idname = "mesh.tile_tread"
     bl_label = "Tile Tread"
     bl_context = "mesh_edit"
     bl_options = {"REGISTER", "UNDO"}
@@ -657,7 +657,7 @@ class TileTread(bpy.types.Operator) :
 def add_invoke_button(self, context) :
     TheCol = self.layout.column(align = True) # gives a nicer grouping of my items
     TheCol.label("Tread Tiler:")
-    TheCol.operator("mesh.TileTread", text = "Tile Tread")
+    TheCol.operator("mesh.tile_tread", text = "Tile Tread")
 #end add_invoke_button
 
 def register() :
