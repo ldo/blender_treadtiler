@@ -25,7 +25,7 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 5),
+        "version" : (0, 5, 6),
         "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -56,8 +56,10 @@ def NearlyEqual(X, Y, Tol) :
 
 def VecNearlyEqual(X, Y, Tol) :
     """are the corresponding elements of vectors X and Y equal to within fraction Tol."""
-    X = X.copy().resize3D()
-    Y = Y.copy().resize3D()
+    X = X.copy()
+    X.resize_3d()
+    Y = Y.copy()
+    Y.resize_3d()
     MaxTol = max(abs(X[i] + Y[i]) / 2 for i in (0, 1, 2)) * Tol
     return \
       (
@@ -289,8 +291,8 @@ class TileTread(bpy.types.Operator) :
                 raise Failure("selected lines must have at least two vertices")
             #end if
             Tolerance = 0.01
-            Slope1 = (OldVertices[TileLine1[-1]]["co"] - OldVertices[TileLine1[0]]["co"]).normalize()
-            Slope2 = (OldVertices[TileLine2[-1]]["co"] - OldVertices[TileLine2[0]]["co"]).normalize()
+            Slope1 = (OldVertices[TileLine1[-1]]["co"] - OldVertices[TileLine1[0]]["co"]).normalized()
+            Slope2 = (OldVertices[TileLine2[-1]]["co"] - OldVertices[TileLine2[0]]["co"]).normalized()
             if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
@@ -303,8 +305,8 @@ class TileTread(bpy.types.Operator) :
                 raise Failure("selected lines are not parallel")
             #end if
             for i in range(1, len(TileLine1) - 1) :
-                Slope1 = (OldVertices[TileLine1[i]]["co"] - OldVertices[TileLine1[0]]["co"]).normalize()
-                Slope2 = (OldVertices[TileLine2[i]]["co"] - OldVertices[TileLine2[0]]["co"]).normalize()
+                Slope1 = (OldVertices[TileLine1[i]]["co"] - OldVertices[TileLine1[0]]["co"]).normalized()
+                Slope2 = (OldVertices[TileLine2[i]]["co"] - OldVertices[TileLine2[0]]["co"]).normalized()
                 if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
@@ -381,17 +383,17 @@ class TileTread(bpy.types.Operator) :
             RotationCenterVertex = Unconnected.pop()
             RotationCenter = OldVertices[RotationCenterVertex]["co"]
             RotationRadius = Center - RotationCenter
-            RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
+            RotationAxis = RotationRadius.cross(ReplicationVector).normalized()
             if redoing :
                 RotationRadius =  \
                     (
-                        RotationRadius.normalize() * self.rotation_radius
+                        RotationRadius.normalized() * self.rotation_radius
                     *
                         mathutils.Matrix.Rotation(self.rotation_tilt, 4, RotationAxis + RotationRadius)
                     *
-                        mathutils.Matrix.Rotation(self.rotation_asym, 4, ReplicationVector.copy().normalize())
+                        mathutils.Matrix.Rotation(self.rotation_asym, 4, ReplicationVector.normalized())
                     )
-                RotationAxis = RotationRadius.cross(ReplicationVector).normalize()
+                RotationAxis = RotationRadius.cross(ReplicationVector).normalized()
                 RotationCenter = Center - RotationRadius
             else :
                 self.rotation_radius = RotationRadius.magnitude
@@ -419,8 +421,8 @@ class TileTread(bpy.types.Operator) :
                 raise Failure("rotation radius too small")
             #end if
             HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
-            ReplicationUnitVector = ReplicationVector.copy().normalize()
-            RotationRadiusUnitVector = RotationRadius.copy().normalize()
+            ReplicationUnitVector = ReplicationVector.normalized()
+            RotationRadiusUnitVector = RotationRadius.normalized()
             MergeVertex = dict(zip(TileLine2, TileLine1))
               # vertices to be merged in adjacent copies of mesh
             MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
@@ -661,10 +663,12 @@ def add_invoke_button(self, context) :
 #end add_invoke_button
 
 def register() :
+    bpy.utils.register_module(__name__)
     bpy.types.VIEW3D_PT_tools_meshedit.append(add_invoke_button)
 #end register
 
 def unregister() :
+    bpy.utils.unregister_module(__name__)
     bpy.types.VIEW3D_PT_tools_meshedit.remove(add_invoke_button)
 #end unregister
 
