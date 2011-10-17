@@ -546,10 +546,10 @@ class TileTread(bpy.types.Operator) :
                         Faces.append \
                           (
                             [
-                                RenumberVertex[Vertex1Prev] +  i * NrVerticesPerTile,
-                                RenumberVertex[Vertex2Prev] +  i * NrVerticesPerTile,
-                                RenumberVertex[Vertex2] +  i * NrVerticesPerTile,
-                                RenumberVertex[Vertex1] +  i * NrVerticesPerTile,
+                                RenumberVertex[Vertex1Prev] + i * NrVerticesPerTile,
+                                RenumberVertex[Vertex2Prev] + i * NrVerticesPerTile,
+                                RenumberVertex[Vertex2] + i * NrVerticesPerTile,
+                                RenumberVertex[Vertex1] + i * NrVerticesPerTile,
                             ]
                           )
                         Vertex1Prev, Vertex2Prev = Vertex1, Vertex2
@@ -557,8 +557,8 @@ class TileTread(bpy.types.Operator) :
                     Faces.append \
                       (
                         [
-                            RenumberVertex[Vertex1Prev] +  i * NrVerticesPerTile,
-                            RenumberVertex[Vertex2Prev] +  i * NrVerticesPerTile,
+                            RenumberVertex[Vertex1Prev] + i * NrVerticesPerTile,
+                            RenumberVertex[Vertex2Prev] + i * NrVerticesPerTile,
                             (RenumberVertex[MergeVertex[JoinLine2[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
                             (RenumberVertex[MergeVertex[JoinLine1[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
                         ]
