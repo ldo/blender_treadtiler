@@ -72,8 +72,6 @@ def VecNearlyEqual(X, Y, Tol) :
     return Result
 #end VecNearlyEqual
 
-#end TreadTilerPanel
-
 class TileTread(bpy.types.Operator) :
     bl_idname = "mesh.tile_tread"
     bl_label = "Tile Tread"
