@@ -25,7 +25,7 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 6),
+        "version" : (0, 5, 7),
         "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -478,7 +478,7 @@ class TileTread(bpy.types.Operator) :
                             +
                                 VertexOffset * ThisSin * ReplicationUnitVector
                             )
-                        ThisVertex = (ThisVertex + VertexOffset) * ThisXForm
+                        ThisVertex = ThisXForm * (ThisVertex + VertexOffset)
                         if VertIndex in MergedWithVertex :
                           # compute merger of vertex in TileLine1 in this copy with
                           # TileLine2 in previous copy
@@ -499,8 +499,6 @@ class TileTread(bpy.types.Operator) :
                                 )
                             ThatVertex = \
                                 (
-                                    (ThatVertex + VertexOffset)
-                                *
                                     (
                                         mathutils.Matrix.Translation(RotationCenter)
                                     *
@@ -520,6 +518,8 @@ class TileTread(bpy.types.Operator) :
                                     *
                                         mathutils.Matrix.Translation(- RotationCenter)
                                     )
+                                *
+                                    (ThatVertex + VertexOffset)
                                 )
                             ThisVertex = (ThisVertex + ThatVertex) / 2
                         #end if
