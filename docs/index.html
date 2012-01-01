@@ -34,9 +34,9 @@ a
 </HEAD>
 <BODY STYLE="background-color : #F4F4F0">
 
-<DIV CLASS="h1">TreadTiler 0.5.3 User Guide<BR>
+<DIV CLASS="h1">TreadTiler 0.6.0 User Guide<BR>
 <A HREF="mailto:&quot;Lawrence D'Oliveiro&quot; &lt;ldo@geek-central.gen.nz&gt;">Lawrence D&#8217;Oliveiro</A><BR>
-2011 January 14</DIV>
+2012 January 1</DIV>
 <DIV STYLE="position : fixed; height : auto; width : 20%; top : 1em; right : 1em; left : auto; background-color : #E8E8E0">Table of Contents
 <OL>
 <LI><A HREF="#Introduction">Introduction</A>
@@ -57,15 +57,14 @@ a
 <DIV STYLE="width : 78%">
 
 <DIV CLASS="h2"><A NAME="Introduction"></A>Introduction</DIV>
-<P>TreadTiler is an addon for the still-in-development
-<A HREF="http://www.blender.org/">Blender</A> 2.5<I>x</I> to
+<P>TreadTiler is an addon for <A HREF="http://www.blender.org/">Blender</A> 2.61 to
 aid in the creation of tyre tread patterns. The basic idea is that you create
 a minimal piece of the pattern, and TreadTiler will replicate it around a ring
 and join the adjacent sides together to form the complete pattern.
 
 
 <DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
-<P>To install TreadTiler, launch Blender 2.5<I>x</I>,  bring up the
+<P>To install TreadTiler, launch Blender 2.61,  bring up the
 User Preferences window, select the Add-Ons tab, and click the “Install Add-Ons”
 button. In the file selector dialog that comes up find your way to the directory
 containing the <TT>treadtiler.py</TT> file, select it, and click the
@@ -78,7 +77,7 @@ checkbox.
 <P>To use TreadTiler, the basic steps are:
 <OL>
 <LI>Create a mesh that will be replicated to make the tyre-tread pattern
-<LI>Add a single unconnected point to the mesh that will serve as the initial centre of rotation
+<LI>Choose a point to serve as the initial centre of rotation
 <LI>Select two contiguous lines of vertices along the two opposite sides of the
 mesh that will adjoin in successive copies
 <LI>Invoke TreadTiler.
@@ -138,10 +137,18 @@ match them up.
 of generating the complete tyre (see below).
 
 <DIV CLASS="h3"><A NAME="RotationCentre"></A>Defining The Initial Centre Of Rotation</DIV>
-<P>Now we need to add a single unconnected vertex. This will define the centre
-around which the mesh pattern will initially be rotated. Don&#8217;t worry about getting
-this absolutely exact&#8212;you can make adjustments to the rotation afterwards.
-<P>One way to locate this with respect to the tread pattern is to construct the point
+<P>Now we need to define the centre point of the tiling rotation. The simplest way to do
+this is to left-click to place the 3D cursor at the desired point. You may need to repeat
+this from different viewpoints to get the cursor exactly at the desired point. Don&#8217;t
+worry about getting this absolutely exact&#8212;you can make fine adjustments to the rotation
+afterwards.
+<P>If using the 3D cursor is good enough for you, you can skip the rest of this section,
+and go on to “Selecting The Sides To Be Joined”.
+<P>Alternatively, you can add a single unconnected vertex to the mesh to serve as the
+rotation centre. This might be useful if you have different tyre meshes in the same document,
+that you need to repeatedly tile; continually having to move the 3D cursor back and forth
+could become inconvenient.
+<P>One way to locate such a vertex with respect to the tread pattern is to construct the point
 from, say, the four corners of the tread mesh. Make sure nothing is selected, switch
 to vertex-selection mode, and select four corners of the tread pattern:
 <DIV CLASS="figure"><IMG SRC="TreadMesh8.png"></DIV>
@@ -183,7 +190,7 @@ that you can adjust. If you hover over these with the mouse, tooltips will appea
 explaining what they are:
 <OL>
 <LI>The length of the radius of rotation, governing the size of the generated mesh. The initial
-value of this comes from the distance to the rotation centre vertex that you specified.
+value of this comes from the distance to the rotation centre that you specified.
 <LI>A “tilt” adjustment angle to the radius of rotation, which can be used to fine-tune how
 well adjacent copies of the tread pattern align together.
 <LI>An “asymmetry” adjustment angle to the radius of rotation, that can be used to twist the
@@ -191,7 +198,7 @@ tread pattern towards one side or the other.
 </OL>
 <P>The number of copies of the replicated mesh pattern are automatically computed
 based on the closest whole-integer number of copies that can be fitted around
-the circumference of the rotation around the centre vertex (with the appropriate
+the circumference of the rotation around the centre (with the appropriate
 scaling adjustment). If you want more copies for a bigger ring, just increase
 the rotation radius:
 <DIV CLASS="figure"><IMG SRC="TreadMesh14.png"></DIV>
