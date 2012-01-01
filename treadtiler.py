@@ -2,7 +2,7 @@
 # This add-on script for Blender 2.5 turns a mesh object into the
 # tread around the circumference of a tyre.
 #
-# Copyright 2010, 2011 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2010-2012 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,7 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 5, 7),
+        "version" : (0, 5, 8),
         "blender" : (2, 5, 6),
         "api" : 32411,
         "location" : "View 3D > Edit Mode > Tool Shelf",
@@ -275,11 +275,20 @@ class TileTread(bpy.types.Operator) :
                     #end if
                 #end if
             #end for
-            if len(Unconnected) != 1 :
-                raise Failure("must be exactly one unconnected vertex to serve as centre of rotation")
+            if len(Unconnected) > 1 :
+                raise Failure("must be no more than one unconnected vertex to serve as centre of rotation")
             #end if
             Center /= (len(OldVertices) - len(Unconnected))
               # centre of mesh (excluding unconnected vertex)
+            if len(Unconnected) == 1 :
+                RotationCenterVertex = Unconnected.pop()
+                RotationCenter = OldVertices[RotationCenterVertex]["co"]
+            else :
+                # no unconnected vertex, use 3D cursor instead
+                RotationCenterVertex = None
+                RotationCenter = TheObject.matrix_world.inverted() * context.scene.cursor_location
+                  # 3D cursor is in global coords, need object coords
+            #end if
             TileLine1 = SelectedLines[0]
             TileLine2 = SelectedLines[1]
             if len(TileLine1) != len(TileLine2) :
@@ -378,8 +387,6 @@ class TileTread(bpy.types.Operator) :
                     (OldVertices[TileLine1[0]]["co"] + OldVertices[TileLine1[-1]]["co"]) / 2
                 )
                   # displacement between mid points of tiling edges
-            RotationCenterVertex = Unconnected.pop()
-            RotationCenter = OldVertices[RotationCenterVertex]["co"]
             RotationRadius = Center - RotationCenter
             RotationAxis = RotationRadius.cross(ReplicationVector).normalized()
             if redoing :
@@ -423,7 +430,9 @@ class TileTread(bpy.types.Operator) :
             RotationRadiusUnitVector = RotationRadius.normalized()
             MergeVertex = dict(zip(TileLine2, TileLine1))
               # vertices to be merged in adjacent copies of mesh
-            MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
+            if RotationCenterVertex != None :
+                MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
+            #end if
             MergedWithVertex = dict(zip(TileLine1, TileLine2))
             RenumberVertex = dict \
               (
@@ -437,7 +446,7 @@ class TileTread(bpy.types.Operator) :
                     #end if
                 #end for
             #end for
-            NrVerticesPerTile = len(OldVertices) - len(TileLine2) - 1
+            NrVerticesPerTile = len(OldVertices) - len(TileLine2) - (0, 1)[RotationCenterVertex != None]
             TotalNrVertices = NrVerticesPerTile * IntReplicate
             for i in range(0, IntReplicate) :
                 ThisXForm = \
@@ -525,7 +534,7 @@ class TileTread(bpy.types.Operator) :
                         #end if
                         NewVertices.append(dict(OldVertices[VertIndex])) # shallow copy is enough
                         NewVertices[-1]["co"] = ThisVertex
-                      #end if
+                    #end if
                 #end for
                 for ThisFace in TheMesh.faces :
                     NewFace = []
