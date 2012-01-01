@@ -65,10 +65,10 @@ and join the adjacent sides together to form the complete pattern.
 
 <DIV CLASS="h2"><A NAME="Installation"></A>Installation</DIV>
 <P>To install TreadTiler, launch Blender 2.61,  bring up the
-User Preferences window, select the Add-Ons tab, and click the “Install Add-Ons”
+User Preferences window, select the Add-Ons tab, and click the &#8220;Install Add-Ons&#8221;
 button. In the file selector dialog that comes up find your way to the directory
 containing the <TT>treadtiler.py</TT> file, select it, and click the
-“Install Add-On...” button. This will take you back to Blender’s
+&#8220;Install Add-On...&#8221; button. This will take you back to Blender&#8217;s
 User Preferences window, where you should find that TreadTiler is now listed among
 the available add-ons, which you can enable for the current document by ticking its
 checkbox.
@@ -89,31 +89,31 @@ mesh that will adjoin in successive copies
 main restrictions are:
 <UL>
 <LI>The two opposite sides that will be joined in adjacent copies
-must be <I>parallel</I> and <I>congruent</I>—it must be possible to move one so that
+must be <I>parallel</I> and <I>congruent</I>&#8212;it must be possible to move one so that
 all the vertices line up exactly on top of the other.
 <LI>There must be no edges running directly between vertices on those two opposite
-sides—there must always be other vertices in-between. Otherwise TreadTiler cannot
+sides&#8212;there must always be other vertices in-between. Otherwise TreadTiler cannot
 separate the selected vertices belonging to the two sides.
 </UL>
 <P>We will use a simple example to start with. This way, you can be sure have
 the basic steps down properly before attempting something more ambitious.
 <P>Create a new Grid mesh with 3 subdivisions along
 the X-axis and 4 subdivisions along the Y-axis (here in top view):
-<DIV CLASS="figure"><IMG SRC="TreadMesh1.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh1.png" ALT="Grid mesh with 3 by 4 subdivisions"></DIV>
 <P>Select the two middle rows of vertices (parallel to the X-axis) and press <B>S</B>(scale)
 then <B>Y</B> to move them symmetrically closer to the edges:
-<DIV CLASS="figure"><IMG SRC="TreadMesh2.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh2.png" ALT="inner vertices moved closer to ends"></DIV>
 <P>Now select the middle column of vertices (parallel to the Y-axis) and move it
 along the Y-axis to produce more of a chevron shape:
-<DIV CLASS="figure"><IMG SRC="TreadMesh3.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh3.png" ALT="more of a chevron shape"></DIV>
 <P>Make sure no vertices are selected. Switch to face-selection mode, and select
 the two large rectangular faces:
-<DIV CLASS="figure"><IMG SRC="TreadMesh4.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh4.png" ALT="selected faces to be extruded"></DIV>
 <P>Switch to a more oblique view so you can observe displacement along the Z-axis.
 Press the <B>E</B> key to extrude the faces; the extrusion is automatically
 constrained to the Z-axis; extrude as much as you want to give some reasonable
 depth to the tread pattern:
-<DIV CLASS="figure"><IMG SRC="TreadMesh5.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh5.png" ALT="after extrusion"></DIV>
 
 <DIV CLASS="h3"><A NAME="Sidewalls"></A>Making The Sidewalls</DIV>
 <P>A tyre is a three-dimensional object. The above steps only define a two-dimensional
@@ -121,12 +121,12 @@ surface for the outside of the tyre. To make the tyre three-dimensional, we need
 give it sidewalls.
 <P>Make sure nothing is selected. Switch to edge-selection mode, and select the edges
 along the two sides that will be parallel to the circumference of the tyre:
-<DIV CLASS="figure"><IMG SRC="TreadMesh6.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh6.png" ALT="sides to be extruded for sidewalls"></DIV>
 <P>Extrude these edges parallel to the Z-axis. Then scale the extruded edges along
 the X-axis to give a more convex shape to the walls; then extrude again parallel to
 the Z-axis, and finally scale back in along the X-axis. The result should look something
 like this:
-<DIV CLASS="figure"><IMG SRC="TreadMesh7.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh7.png" ALT="sidewalls complete, left open"></DIV>
 <P>Now, you would think you want to join those inner edges, effectively forming a
 hollow tube, which TreadTiler would then replicate to form a complete torus.
 <I>Don&#8217;t do this</I>. TreadTiler needs to match up corresponding vertices,
@@ -143,7 +143,7 @@ this from different viewpoints to get the cursor exactly at the desired point. D
 worry about getting this absolutely exact&#8212;you can make fine adjustments to the rotation
 afterwards.
 <P>If using the 3D cursor is good enough for you, you can skip the rest of this section,
-and go on to “Selecting The Sides To Be Joined”.
+and go on to &#8220;Selecting The Sides To Be Joined&#8221;.
 <P>Alternatively, you can add a single unconnected vertex to the mesh to serve as the
 rotation centre. This might be useful if you have different tyre meshes in the same document,
 that you need to repeatedly tile; continually having to move the 3D cursor back and forth
@@ -151,10 +151,10 @@ could become inconvenient.
 <P>One way to locate such a vertex with respect to the tread pattern is to construct the point
 from, say, the four corners of the tread mesh. Make sure nothing is selected, switch
 to vertex-selection mode, and select four corners of the tread pattern:
-<DIV CLASS="figure"><IMG SRC="TreadMesh8.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh8.png" ALT="four corners selected"></DIV>
 <P>Duplicate these vertices (<B>SHIFT+D</B>), constrain their motion to the Z-axis
 (press <B>Z</B>) and move them some distance away from the pattern mesh:
-<DIV CLASS="figure"><IMG SRC="TreadMesh9.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh9.png" ALT="four corner vertices duplicated and moved to desired centre distance"></DIV>
 <P>Then merge them into a single vertex at the centre (<B>ALT+M</B>).
 <P><B>Finding the rotation centre:</B> a single unconnected vertex is easy to
 lose. If you have trouble seeing where it is (if for example you want to move
@@ -167,33 +167,33 @@ then <B>CTRL+I</B> again, watch out for the orange dot winking off and on.
 <DIV CLASS="h3"><A NAME="SelectingSides"></A>Selecting The Sides To Be Joined</DIV>
 <P>Make sure no vertices are selected. Now carefully select vertices forming two
 contiguous lines on opposite ends of the pattern mesh:
-<DIV CLASS="figure"><IMG SRC="TreadMesh10.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh10.png" ALT="select edges to be merged during tiling"></DIV>
 <P>If you have TreadTiler properly installed and enabled for this document, then
 you should see the TreadTiler panel appear in the Tool Shelf on the left of the 3D view
-(probably near the bottom, press <B>T</B> to display the Tool Shelf if it’s not
+(probably near the bottom, press <B>T</B> to display the Tool Shelf if it&#8217;s not
 already visible):
-<DIV CLASS="figure"><IMG SRC="TreadMesh11.png"></DIV>
-<P>Simply click the “Tile Tread” button to generate the initial mesh:
-<DIV CLASS="figure"><IMG SRC="TreadMesh12.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh11.png" ALT="Tool Shelf panel visible"></DIV>
+<P>Simply click the &#8220;Tile Tread&#8221; button to generate the initial mesh:
+<DIV CLASS="figure"><IMG SRC="TreadMesh12.png" ALT="initial tiled mesh"></DIV>
 <P>As it appears you should also see the following panel appear at the bottom of the Tool Shelf:
-<DIV CLASS="figure"><IMG SRC="TreadMesh13.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh13.png" ALT="Tool Shelf panel for adjusting tiling"></DIV>
 <P>If instead you see any error messages about not properly selecting two lines of
 vertices, or not having a single unconnected point to be the rotation centre, then
 review the steps above and make sure you properly followed them.
 
 <DIV CLASS="h3"><A NAME="CompleteTorus"></A>Completing The Torus</DIV>
-<P>Check the “Join Ends” box to have TreadTiler complete the torus. You can also
-check “Smooth Join” to have smooth shading automatically applied to the faces
+<P>Check the &#8220;Join Ends&#8221; box to have TreadTiler complete the torus. You can also
+check &#8220;Smooth Join&#8221; to have smooth shading automatically applied to the faces
 created to complete the torus.
-<P>Under the label “Rotation Centre Adjust:”, you will see three numbers displayed
+<P>Under the label &#8220;Rotation Centre Adjust:&#8221;, you will see three numbers displayed
 that you can adjust. If you hover over these with the mouse, tooltips will appear
 explaining what they are:
 <OL>
 <LI>The length of the radius of rotation, governing the size of the generated mesh. The initial
 value of this comes from the distance to the rotation centre that you specified.
-<LI>A “tilt” adjustment angle to the radius of rotation, which can be used to fine-tune how
+<LI>A &#8220;tilt&#8221; adjustment angle to the radius of rotation, which can be used to fine-tune how
 well adjacent copies of the tread pattern align together.
-<LI>An “asymmetry” adjustment angle to the radius of rotation, that can be used to twist the
+<LI>An &#8220;asymmetry&#8221; adjustment angle to the radius of rotation, that can be used to twist the
 tread pattern towards one side or the other.
 </OL>
 <P>The number of copies of the replicated mesh pattern are automatically computed
@@ -201,20 +201,20 @@ based on the closest whole-integer number of copies that can be fitted around
 the circumference of the rotation around the centre (with the appropriate
 scaling adjustment). If you want more copies for a bigger ring, just increase
 the rotation radius:
-<DIV CLASS="figure"><IMG SRC="TreadMesh14.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh14.png" ALT="larger tyre radius"></DIV>
 <P>Note that the original mesh object you created is not deleted or modified
 in any way; instead, a new mesh object is created, taking the name of the old
-one and adding “ tread” to the end. Thus, if you followed the above example closely,
-the original mesh would have its default name of “Grid”, so the new mesh would
-be called “Grid tread”.
+one and adding &#8220; tread&#8221; to the end. Thus, if you followed the above example closely,
+the original mesh would have its default name of &#8220;Grid&#8221;, so the new mesh would
+be called &#8220;Grid tread&#8221;.
 <P>Think maybe it looks too angular? Go back to the original mesh pattern, and add
 some more vertices in the middle, perhaps by doing a loop cut (<B>CTRL+R</B>):
-<DIV CLASS="figure"><IMG SRC="TreadMesh15.png"></DIV>
-<DIV CLASS="figure"><IMG SRC="TreadMesh16.png"></DIV>
-<P>Now when you rerun TreadTiler (don’t forget to reselect the vertices along the
+<DIV CLASS="figure"><IMG SRC="TreadMesh15.png" ALT="where to do loop cut"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh16.png" ALT="loop cut done"></DIV>
+<P>Now when you rerun TreadTiler (don&#8217;t forget to reselect the vertices along the
 two sides to be joined), it will apply a radial displacement to the
 extra vertices to give more of a curve to the shape:
-<DIV CLASS="figure"><IMG SRC="TreadMesh17.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh17.png" ALT="rounder large tyre"></DIV>
 <P> The effect is quite subtle here, but will be more pronounced if the tyre radius
 is made smaller.
 
@@ -226,7 +226,7 @@ will carry over to the corresponding parts of the generated mesh.
 <DIV CLASS="h3"><A NAME="OtherObjects"></A>Making Other Objects</DIV>
 <P>TreadTiler can be used to make other things besides tyres. Here it is being
 used to construct various kinds of gear wheels:
-<DIV CLASS="figure"><IMG SRC="TreadMesh18.png"></DIV>
+<DIV CLASS="figure"><IMG SRC="TreadMesh18.png" ALT="gear wheels"></DIV>
 
 </DIV>
 </BODY>
