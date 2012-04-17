@@ -25,9 +25,8 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 6, 0),
-        "blender" : (2, 5, 6),
-        "api" : 32411,
+        "version" : (0, 6, 1),
+        "blender" : (2, 6, 3),
         "location" : "View 3D > Edit Mode > Tool Shelf",
         "description" :
             "Turns a mesh object into the tread around the circumference of a tyre.\n\n"
@@ -162,7 +161,7 @@ class TileTread(bpy.types.Operator) :
             #end for
             if self.join_ends :
                 EdgeFaces = {} # mapping from edge to adjacent faces
-                for ThisFace in TheMesh.faces :
+                for ThisFace in TheMesh.polygons :
                     for ThisEdge in ThisFace.edge_keys :
                         if not ThisEdge in EdgeFaces :
                             EdgeFaces[ThisEdge] = []
@@ -172,7 +171,7 @@ class TileTread(bpy.types.Operator) :
                 #end for
             #end if
             FaceSettings = {}
-            for ThisFace in TheMesh.faces :
+            for ThisFace in TheMesh.polygons :
                 FaceSettings[tuple(sorted(ThisFace.vertices))] = \
                     {
                         "use_smooth" : ThisFace.use_smooth,
@@ -536,7 +535,7 @@ class TileTread(bpy.types.Operator) :
                         NewVertices[-1]["co"] = ThisVertex
                     #end if
                 #end for
-                for ThisFace in TheMesh.faces :
+                for ThisFace in TheMesh.polygons :
                     NewFace = []
                     for v in ThisFace.vertices :
                         if v in MergeVertex :
@@ -616,7 +615,7 @@ class TileTread(bpy.types.Operator) :
                 #end for
                 FaceSettings[tuple(sorted(FaceVertices))] = OldFaceSettings[tuple(sorted(OldFaceVertices))]
             #end for
-            for ThisFace in NewMesh.faces :
+            for ThisFace in NewMesh.polygons :
                 FaceVertices = tuple(sorted((v % NrVerticesPerTile for v in sorted(ThisFace.vertices))))
                 if FaceVertices in FaceSettings :
                     ThisFaceSettings = FaceSettings[FaceVertices]
@@ -634,7 +633,7 @@ class TileTread(bpy.types.Operator) :
             NewObj.matrix_local = TheObject.matrix_local
             NewObjName = NewObj.name
             bpy.ops.object.select_all(action = "DESELECT")
-            bpy.ops.object.select_name(name = NewObjName)
+            bpy.data.objects[NewObjName].select = True
             for ThisVertex in NewMesh.vertices :
                 ThisVertex.select = True # usual Blender default for newly-created object
             #end for
