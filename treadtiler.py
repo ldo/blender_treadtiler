@@ -68,7 +68,6 @@ def VecNearlyEqual(X, Y, Tol) :
         and
             abs(X[2] - Y[2]) <= MaxTol
       )
-    return Result
 #end VecNearlyEqual
 
 class TileTread(bpy.types.Operator) :
