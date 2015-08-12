@@ -2,7 +2,7 @@
 # This add-on script for Blender 2.5 turns a mesh object into the
 # tread around the circumference of a tyre.
 #
-# Copyright 2010-2012 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2010-2012, 2015 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,8 +25,8 @@ bl_info = \
     {
         "name" : "Tread Tiler",
         "author" : "Lawrence D'Oliveiro <ldo@geek-central.gen.nz>",
-        "version" : (0, 6, 1),
-        "blender" : (2, 6, 3),
+        "version" : (0, 6, 2),
+        "blender" : (2, 7, 5),
         "location" : "View 3D > Edit Mode > Tool Shelf",
         "description" :
             "Turns a mesh object into the tread around the circumference of a tyre.\n\n"
@@ -42,33 +42,33 @@ bl_info = \
 
 class Failure(Exception) :
 
-    def __init__(self, Msg) :
-        self.Msg = Msg
+    def __init__(self, msg) :
+        self.msg = msg
     #end __init__
 
 #end Failure
 
-def NearlyEqual(X, Y, Tol) :
-    """are X and Y equal to within fraction Tol."""
-    return abs(X - Y) <= Tol * abs(X + Y) / 2
-#end NearlyEqual
+def nearly_equal(x, y, tol) :
+    """are x and y equal to within fraction tol."""
+    return abs(x - y) <= tol * abs(x + y) / 2
+#end nearly_equal
 
-def VecNearlyEqual(X, Y, Tol) :
-    """are the corresponding elements of vectors X and Y equal to within fraction Tol."""
-    X = X.copy()
-    X.resize_3d()
-    Y = Y.copy()
-    Y.resize_3d()
-    MaxTol = max(abs(X[i] + Y[i]) / 2 for i in (0, 1, 2)) * Tol
+def vec_nearly_equal(x, y, tol) :
+    """are the corresponding elements of vectors x and y equal to within fraction tol."""
+    x = x.copy()
+    x.resize_3d()
+    y = y.copy()
+    y.resize_3d()
+    max_tol = max(abs(x[i] + y[i]) / 2 for i in (0, 1, 2)) * tol
     return \
       (
-            abs(X[0] - Y[0]) <= MaxTol
+            abs(x[0] - y[0]) <= max_tol
         and
-            abs(X[1] - Y[1]) <= MaxTol
+            abs(x[1] - y[1]) <= max_tol
         and
-            abs(X[2] - Y[2]) <= MaxTol
+            abs(x[2] - y[2]) <= max_tol
       )
-#end VecNearlyEqual
+#end vec_nearly_equal
 
 class TileTread(bpy.types.Operator) :
     bl_idname = "mesh.tile_tread"
@@ -109,13 +109,13 @@ class TileTread(bpy.types.Operator) :
       )
 
     def draw(self, context) :
-        TheCol = self.layout.column(align = True)
-        TheCol.prop(self, "join_ends")
-        TheCol.prop(self, "smooth_join")
-        TheCol.label("Rotation Centre Adjust:")
-        TheCol.prop(self, "rotation_radius")
-        TheCol.prop(self, "rotation_tilt")
-        TheCol.prop(self, "rotation_asym")
+        the_col = self.layout.column(align = True)
+        the_col.prop(self, "join_ends")
+        the_col.prop(self, "smooth_join")
+        the_col.label("Rotation Centre Adjust:")
+        the_col.prop(self, "rotation_radius")
+        the_col.prop(self, "rotation_tilt")
+        the_col.prop(self, "rotation_asym")
     #end draw
 
     def action_common(self, context, redoing) :
@@ -125,56 +125,56 @@ class TileTread(bpy.types.Operator) :
                 if context.mode != "EDIT_MESH" :
                     raise Failure("not editing a mesh")
                 #end if
-                TheObject = context.scene.objects.active
-                if TheObject == None or not TheObject.select :
+                the_object = context.scene.objects.active
+                if the_object == None or not the_object.select :
                     raise Failure("no selected object")
                 #end if
                 # save the name of the object so I can find it again
                 # when I'm reexecuted. Can't save a direct reference,
                 # as that is likely to become invalid. Blender guarantees
                 # the name is unique anyway.
-                self.orig_object_name = TheObject.name
+                self.orig_object_name = the_object.name
             else :
-                TheObject = context.scene.objects[self.orig_object_name]
+                the_object = context.scene.objects[self.orig_object_name]
             #end if
-            TheMesh = TheObject.data
-            if type(TheMesh) != bpy.types.Mesh :
+            the_mesh = the_object.data
+            if type(the_mesh) != bpy.types.Mesh :
                 raise Failure("selected object is not a mesh")
             #end if
             context.tool_settings.mesh_select_mode = (True, False, False) # vertex selection mode
-            NewMeshName = TheObject.name + " tread"
+            new_mesh_name = the_object.name + " tread"
             if not redoing :
                 bpy.ops.object.editmode_toggle()
                 bpy.ops.object.editmode_toggle()
                   # Have to get out of edit mode and back in again in order
                   # to synchronize possibly cached state of vertex selections
             #end if
-            VertexEdges = {} # mapping from vertex to connected edges
-            for ThisEdge in TheMesh.edges :
-                for ThisVertex in ThisEdge.vertices :
-                    if not ThisVertex in VertexEdges :
-                        VertexEdges[ThisVertex] = []
+            vertex_edges = {} # mapping from vertex to connected edges
+            for this_edge in the_mesh.edges :
+                for this_vertex in this_edge.vertices :
+                    if not this_vertex in vertex_edges :
+                        vertex_edges[this_vertex] = []
                     #end if
-                    VertexEdges[ThisVertex].append(ThisEdge)
+                    vertex_edges[this_vertex].append(this_edge)
                 #end for
             #end for
             if self.join_ends :
-                EdgeFaces = {} # mapping from edge to adjacent faces
-                for ThisFace in TheMesh.polygons :
-                    for ThisEdge in ThisFace.edge_keys :
-                        if not ThisEdge in EdgeFaces :
-                            EdgeFaces[ThisEdge] = []
+                edge_faces = {} # mapping from edge to adjacent faces
+                for this_face in the_mesh.polygons :
+                    for this_edge in this_face.edge_keys :
+                        if not this_edge in edge_faces :
+                            edge_faces[this_edge] = []
                         #end if
-                        EdgeFaces[ThisEdge].append(ThisFace.edge_keys)
+                        edge_faces[this_edge].append(this_face.edge_keys)
                     #end for
                 #end for
             #end if
-            FaceSettings = {}
-            for ThisFace in TheMesh.polygons :
-                FaceSettings[tuple(sorted(ThisFace.vertices))] = \
+            face_settings = {}
+            for this_face in the_mesh.polygons :
+                face_settings[tuple(sorted(this_face.vertices))] = \
                     {
-                        "use_smooth" : ThisFace.use_smooth,
-                        "material_index" : ThisFace.material_index,
+                        "use_smooth" : this_face.use_smooth,
+                        "material_index" : this_face.material_index,
                     }
             #end for
             # Find two continuous lines of selected vertices. Each line begins
@@ -183,140 +183,140 @@ class TileTread(bpy.types.Operator) :
             # Why not allow two selected loops of vertices as well, you may ask?
             # Because then I can't figure out which vertex on one loop should be
             # merged with which one on the other loop in an adjacent copy.
-            SelectedLines = []
-            Seen = set()
-            for ThisVertex in TheMesh.vertices :
-                ThisVertex = ThisVertex.index
-                if not ThisVertex in Seen and TheMesh.vertices[ThisVertex].select :
-                    Connected = []
-                    for ThisEdge in VertexEdges.get(ThisVertex, []) :
-                        for OtherVertex in ThisEdge.vertices :
-                            if OtherVertex != ThisVertex and TheMesh.vertices[OtherVertex].select :
-                                Connected.append(OtherVertex)
+            selected_lines = []
+            vertices_seen = set()
+            for this_vertex in the_mesh.vertices :
+                this_vertex = this_vertex.index
+                if not this_vertex in vertices_seen and the_mesh.vertices[this_vertex].select :
+                    connected = []
+                    for this_edge in vertex_edges.get(this_vertex, []) :
+                        for other_vertex in this_edge.vertices :
+                            if other_vertex != this_vertex and the_mesh.vertices[other_vertex].select :
+                                connected.append(other_vertex)
                             #end if
                         #end for
                     #end for
-                    if len(Connected) > 2 or len(Connected) == 0 :
-                        sys.stderr.write("Connected to %d: %s\n" % (ThisVertex, repr(Connected))) # debug
+                    if len(connected) > 2 or len(connected) == 0 :
+                        sys.stderr.write("connected to %d: %s\n" % (this_vertex, repr(connected))) # debug
                         raise Failure("selection must be lines of vertices")
                     #end if
-                    if len(Connected) == 1 :
+                    if len(connected) == 1 :
                         # start a line from here
-                        ThatVertex = Connected[0]
-                        ThisLine = [ThisVertex, ThatVertex]
-                        Seen.update(ThisLine)
+                        that_vertex = connected[0]
+                        this_line = [this_vertex, that_vertex]
+                        vertices_seen.update(this_line)
                         while True :
-                            NextVertex = None
-                            for ThisEdge in VertexEdges[ThatVertex] :
-                                for OtherVertex in ThisEdge.vertices :
+                            next_vertex = None
+                            for this_edge in vertex_edges[that_vertex] :
+                                for other_vertex in this_edge.vertices :
                                     if (
-                                            TheMesh.vertices[OtherVertex].select
+                                            the_mesh.vertices[other_vertex].select
                                         and
-                                            OtherVertex != ThatVertex
+                                            other_vertex != that_vertex
                                         and
-                                            OtherVertex != ThisLine[-2]
+                                            other_vertex != this_line[-2]
                                         and
-                                            OtherVertex != ThisVertex
+                                            other_vertex != this_vertex
                                     ) :
-                                        if NextVertex != None :
+                                        if next_vertex != None :
                                             raise Failure \
                                               (
                                                 "selection must be simple lines of vertices"
                                               )
                                         #end if
-                                        NextVertex = OtherVertex
+                                        next_vertex = other_vertex
                                     #end if
                                 #end for
                             #end for
-                            if NextVertex == None :
+                            if next_vertex == None :
                                 break
-                            Seen.add(NextVertex)
-                            ThisLine.append(NextVertex)
-                            ThatVertex = NextVertex
+                            vertices_seen.add(next_vertex)
+                            this_line.append(next_vertex)
+                            that_vertex = next_vertex
                         #end while
-                        SelectedLines.append(ThisLine)
+                        selected_lines.append(this_line)
                     #end if
                 #end if
             #end for
-            if len(SelectedLines) != 2 :
+            if len(selected_lines) != 2 :
                 raise Failure("selection must contain exactly two lines of vertices")
             #end if
-            OldVertices = []
+            old_vertices = []
               # for making my own copy of coordinates from original mesh. This seems
               # to give more reliable results than repeatedly accessing the original
               # mesh. Why?
-            Unconnected = set()
-            Center = None
-            for ThisVertex in TheMesh.vertices :
-                OldVertices.append \
+            unconnected = set()
+            center = None
+            for this_vertex in the_mesh.vertices :
+                old_vertices.append \
                   (
                     {
-                        "co" : ThisVertex.co.copy(),
-                        "bevel_weight" : ThisVertex.bevel_weight,
+                        "co" : this_vertex.co.copy(),
+                        "bevel_weight" : this_vertex.bevel_weight,
                         "groups" : tuple
                           (
                             {
                                 "group" : g.group,
                                 "weight" : g.weight,
                             }
-                          for g in ThisVertex.groups
+                          for g in this_vertex.groups
                           ),
                     }
                   )
-                if ThisVertex.index not in VertexEdges :
-                    Unconnected.add(ThisVertex.index)
+                if this_vertex.index not in vertex_edges :
+                    unconnected.add(this_vertex.index)
                 else :
-                    if Center == None :
-                        Center = ThisVertex.co.copy()
+                    if center == None :
+                        center = this_vertex.co.copy()
                     else :
-                        Center += ThisVertex.co
+                        center += this_vertex.co
                     #end if
                 #end if
             #end for
-            if len(Unconnected) > 1 :
+            if len(unconnected) > 1 :
                 raise Failure("must be no more than one unconnected vertex to serve as centre of rotation")
             #end if
-            Center /= (len(OldVertices) - len(Unconnected))
+            center /= (len(old_vertices) - len(unconnected))
               # centre of mesh (excluding unconnected vertex)
-            if len(Unconnected) == 1 :
-                RotationCenterVertex = Unconnected.pop()
-                RotationCenter = OldVertices[RotationCenterVertex]["co"]
+            if len(unconnected) == 1 :
+                rotation_center_vertex = unconnected.pop()
+                rotation_center = old_vertices[rotation_center_vertex]["co"]
             else :
                 # no unconnected vertex, use 3D cursor instead
-                RotationCenterVertex = None
-                RotationCenter = TheObject.matrix_world.inverted() * context.scene.cursor_location
+                rotation_center_vertex = None
+                rotation_center = the_object.matrix_world.inverted() * context.scene.cursor_location
                   # 3D cursor is in global coords, need object coords
             #end if
-            TileLine1 = SelectedLines[0]
-            TileLine2 = SelectedLines[1]
-            if len(TileLine1) != len(TileLine2) :
+            tile_line_1 = selected_lines[0]
+            tile_line_2 = selected_lines[1]
+            if len(tile_line_1) != len(tile_line_2) :
                 raise Failure("selected lines don't have same number of vertices")
             #end if
-            if len(TileLine1) < 2 :
+            if len(tile_line_1) < 2 :
                 raise Failure("selected lines must have at least two vertices")
             #end if
-            Tolerance = 0.01
-            Slope1 = (OldVertices[TileLine1[-1]]["co"] - OldVertices[TileLine1[0]]["co"]).normalized()
-            Slope2 = (OldVertices[TileLine2[-1]]["co"] - OldVertices[TileLine2[0]]["co"]).normalized()
-            if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
+            tolerance = 0.01
+            slope1 = (old_vertices[tile_line_1[-1]]["co"] - old_vertices[tile_line_1[0]]["co"]).normalized()
+            slope2 = (old_vertices[tile_line_2[-1]]["co"] - old_vertices[tile_line_2[0]]["co"]).normalized()
+            if math.isnan(tuple(slope1)[0]) or math.isnan(tuple(slope2)[0]) :
                 raise Failure("selected lines must have nonzero length")
             #end if
-            if VecNearlyEqual(Slope1, Slope2, Tolerance) :
+            if vec_nearly_equal(slope1, slope2, tolerance) :
                 pass # fine
-            elif VecNearlyEqual(Slope1, - Slope2, Tolerance) :
-                TileLine2 = list(reversed(TileLine2))
+            elif vec_nearly_equal(slope1, - slope2, tolerance) :
+                tile_line_2 = list(reversed(tile_line_2))
             else :
-                sys.stderr.write("Slope1 = %s, Slope2 = %s\n" % (repr(Slope1), repr(Slope2))) # debug
+                sys.stderr.write("slope1 = %s, slope2 = %s\n" % (repr(slope1), repr(slope2))) # debug
                 raise Failure("selected lines are not parallel")
             #end if
-            for i in range(1, len(TileLine1) - 1) :
-                Slope1 = (OldVertices[TileLine1[i]]["co"] - OldVertices[TileLine1[0]]["co"]).normalized()
-                Slope2 = (OldVertices[TileLine2[i]]["co"] - OldVertices[TileLine2[0]]["co"]).normalized()
-                if math.isnan(tuple(Slope1)[0]) or math.isnan(tuple(Slope2)[0]) :
+            for i in range(1, len(tile_line_1) - 1) :
+                slope1 = (old_vertices[tile_line_1[i]]["co"] - old_vertices[tile_line_1[0]]["co"]).normalized()
+                slope2 = (old_vertices[tile_line_2[i]]["co"] - old_vertices[tile_line_2[0]]["co"]).normalized()
+                if math.isnan(tuple(slope1)[0]) or math.isnan(tuple(slope2)[0]) :
                     # should I allow this?
                     raise Failure("selected lines contain overlapping vertices")
                 #end if
-                if not VecNearlyEqual(Slope1, Slope2, Tolerance) :
+                if not vec_nearly_equal(slope1, slope2, tolerance) :
                     raise Failure("selected lines are not parallel")
                 #end if
             #end for
@@ -324,272 +324,272 @@ class TileTread(bpy.types.Operator) :
                 # Find two continuous lines of vertices connecting the ends of
                 # the selected lines. These will be joined with additional faces
                 # to complete the torus in the generated mesh.
-                JoinLine1 = []
-                JoinLine2 = []
-                Vertex1 = TileLine1[0]
-                Vertex2 = TileLine1[-1]
-                Vertex1Prev = TileLine1[1]
-                Vertex2Prev = TileLine1[-2]
+                join_line_1 = []
+                join_line_2 = []
+                vertex_1 = tile_line_1[0]
+                vertex_2 = tile_line_1[-1]
+                vertex_1_prev = tile_line_1[1]
+                vertex_2_prev = tile_line_1[-2]
                 while True :
-                    JoinLine1.append(Vertex1)
-                    JoinLine2.append(Vertex2)
-                    if Vertex1 == TileLine2[0] or Vertex2 == TileLine2[-1] :
-                        if Vertex1 != TileLine2[0] or Vertex2 != TileLine2[-1] :
-                            sys.stderr.write("JoinLine1 so far: %s\n" % repr(JoinLine1)) # debug
-                            sys.stderr.write("JoinLine2 so far: %s\n" % repr(JoinLine2)) # debug
-                            sys.stderr.write("TileLine1 = %s\n" % repr(TileLine1)) # debug
-                            sys.stderr.write("TileLine2 = %s\n" % repr(TileLine2)) # debug
+                    join_line_1.append(vertex_1)
+                    join_line_2.append(vertex_2)
+                    if vertex_1 == tile_line_2[0] or vertex_2 == tile_line_2[-1] :
+                        if vertex_1 != tile_line_2[0] or vertex_2 != tile_line_2[-1] :
+                            sys.stderr.write("join_line_1 so far: %s\n" % repr(join_line_1)) # debug
+                            sys.stderr.write("join_line_2 so far: %s\n" % repr(join_line_2)) # debug
+                            sys.stderr.write("tile_line_1 = %s\n" % repr(tile_line_1)) # debug
+                            sys.stderr.write("tile_line_2 = %s\n" % repr(tile_line_2)) # debug
                             raise Failure("end lines to be joined do not have equal numbers of vertices")
                         #end if
                         break
                     #end if
-                    if Vertex1 == TileLine2[-1] or Vertex2 == TileLine2[0] :
+                    if vertex_1 == tile_line_2[-1] or vertex_2 == tile_line_2[0] :
                         raise Failure("end lines to be joined don't connect properly between selected lines")
                     #end if
-                    Vertex1Next, Vertex2Next = None, None
-                    for ThisEdge in VertexEdges[Vertex1] :
-                        if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
-                            for ThisVertex in ThisEdge.vertices :
-                                if ThisVertex != Vertex1 and ThisVertex != Vertex1Prev :
-                                    if Vertex1Next != None :
+                    vertex_1_next, vertex_2_next = None, None
+                    for this_edge in vertex_edges[vertex_1] :
+                        if len(edge_faces[tuple(this_edge.vertices)]) == 1 : # ensure it's not an interior edge
+                            for this_vertex in this_edge.vertices :
+                                if this_vertex != vertex_1 and this_vertex != vertex_1_prev :
+                                    if vertex_1_next != None :
                                         raise Failure("can't find unique line between ends to join")
                                     #end if
-                                    Vertex1Next = ThisVertex
+                                    vertex_1_next = this_vertex
                                 #end if
                             #end for
                         #end if
                     #end for
-                    for ThisEdge in VertexEdges[Vertex2] :
-                        if len(EdgeFaces[tuple(ThisEdge.vertices)]) == 1 : # ensure it's not an interior edge
-                            for ThisVertex in ThisEdge.vertices :
-                                if ThisVertex != Vertex2 and ThisVertex != Vertex2Prev :
-                                    if Vertex2Next != None :
+                    for this_edge in vertex_edges[vertex_2] :
+                        if len(edge_faces[tuple(this_edge.vertices)]) == 1 : # ensure it's not an interior edge
+                            for this_vertex in this_edge.vertices :
+                                if this_vertex != vertex_2 and this_vertex != vertex_2_prev :
+                                    if vertex_2_next != None :
                                         raise Failure("can't find unique line between ends to join")
                                     #end if
-                                    Vertex2Next = ThisVertex
+                                    vertex_2_next = this_vertex
                                 #end if
                             #end for
                         #end if
                     #end for
-                    if Vertex1Next == None or Vertex2Next == None :
+                    if vertex_1_next == None or vertex_2_next == None :
                         raise Failure("can't find line between ends to join")
                     #end if
-                    Vertex1Prev, Vertex2Prev = Vertex1, Vertex2
-                    Vertex1, Vertex2 = Vertex1Next, Vertex2Next
+                    vertex_1_prev, vertex_2_prev = vertex_1, vertex_2
+                    vertex_1, vertex_2 = vertex_1_next, vertex_2_next
                 #end while
             #end if
-            ReplicationVector =  \
+            replication_vector =  \
                 (
-                    (OldVertices[TileLine2[0]]["co"] + OldVertices[TileLine2[-1]]["co"]) / 2
+                    (old_vertices[tile_line_2[0]]["co"] + old_vertices[tile_line_2[-1]]["co"]) / 2
                 -
-                    (OldVertices[TileLine1[0]]["co"] + OldVertices[TileLine1[-1]]["co"]) / 2
+                    (old_vertices[tile_line_1[0]]["co"] + old_vertices[tile_line_1[-1]]["co"]) / 2
                 )
                   # displacement between mid points of tiling edges
-            RotationRadius = Center - RotationCenter
-            RotationAxis = RotationRadius.cross(ReplicationVector).normalized()
+            rotation_radius = center - rotation_center
+            rotation_axis = rotation_radius.cross(replication_vector).normalized()
             if redoing :
-                RotationRadius =  \
+                rotation_radius =  \
                     (
-                        RotationRadius.normalized() * self.rotation_radius
+                        rotation_radius.normalized() * self.rotation_radius
                     *
-                        mathutils.Matrix.Rotation(self.rotation_tilt, 4, RotationAxis + RotationRadius)
+                        mathutils.Matrix.Rotation(self.rotation_tilt, 4, rotation_axis + rotation_radius)
                     *
-                        mathutils.Matrix.Rotation(self.rotation_asym, 4, ReplicationVector.normalized())
+                        mathutils.Matrix.Rotation(self.rotation_asym, 4, replication_vector.normalized())
                     )
-                RotationAxis = RotationRadius.cross(ReplicationVector).normalized()
-                RotationCenter = Center - RotationRadius
+                rotation_axis = rotation_radius.cross(replication_vector).normalized()
+                rotation_center = center - rotation_radius
             else :
-                self.rotation_radius = RotationRadius.magnitude
+                self.rotation_radius = rotation_radius.magnitude
                 self.rotation_tilt = 0
                 self.rotation_asym = 0
             #end if
-            sys.stderr.write("SelectedLines = %s\n" % repr(SelectedLines)) # debug
-            sys.stderr.write("Center = %s\n" % repr(Center)) # debug
-            sys.stderr.write("RotationCenter = %s\n" % repr(RotationCenter)) # debug
-            sys.stderr.write("ReplicationVector = %s\n" % repr(ReplicationVector)) # debug
-            RotationRadiusLength = RotationRadius.magnitude
-            Replicate = 2 * math.pi * RotationRadiusLength / ReplicationVector.magnitude
-            IntReplicate = round(Replicate)
-            Rescale = IntReplicate / Replicate
-            sys.stderr.write("RotationRadius = %s, axis = %s, NrCopies = %.2f * %.2f = %d\n" % (repr(RotationRadius), repr(RotationAxis), Replicate, Rescale, IntReplicate)) # debug
+            sys.stderr.write("selected_lines = %s\n" % repr(selected_lines)) # debug
+            sys.stderr.write("center = %s\n" % repr(center)) # debug
+            sys.stderr.write("rotation_center = %s\n" % repr(rotation_center)) # debug
+            sys.stderr.write("replication_vector = %s\n" % repr(replication_vector)) # debug
+            rotation_radius_length = rotation_radius.magnitude
+            replicate = 2 * math.pi * rotation_radius_length / replication_vector.magnitude
+            int_replicate = round(replicate)
+            rescale = int_replicate / replicate
+            sys.stderr.write("rotation_radius = %s, axis = %s, nr copies = %.2f * %.2f = %d\n" % (repr(rotation_radius), repr(rotation_axis), replicate, rescale, int_replicate)) # debug
             if not redoing :
                 bpy.ops.object.editmode_toggle()
             #end if
-            NewMesh = bpy.data.meshes.new(NewMeshName)
-            NewVertices = []
-            Faces = []
-            # sin and cos of half-angle subtended by mesh at RotationCenter
-            HalfWidthSin = ReplicationVector.magnitude / RotationRadiusLength / 2
-            if abs(HalfWidthSin) > 1 :
+            new_mesh = bpy.data.meshes.new(new_mesh_name)
+            new_vertices = []
+            faces = []
+            # sin and cos of half-angle subtended by mesh at rotation_center
+            half_width_sin = replication_vector.magnitude / rotation_radius_length / 2
+            if abs(half_width_sin) > 1 :
                 raise Failure("rotation radius too small")
             #end if
-            HalfWidthCos = math.sqrt(1 - HalfWidthSin * HalfWidthSin)
-            ReplicationUnitVector = ReplicationVector.normalized()
-            RotationRadiusUnitVector = RotationRadius.normalized()
-            MergeVertex = dict(zip(TileLine2, TileLine1))
+            half_width_cos = math.sqrt(1 - half_width_sin * half_width_sin)
+            replication_unit_vector = replication_vector.normalized()
+            rotation_radius_unit_vector = rotation_radius.normalized()
+            merge_vertex = dict(zip(tile_line_2, tile_line_1))
               # vertices to be merged in adjacent copies of mesh
-            if RotationCenterVertex != None :
-                MergeVertex[RotationCenterVertex] = None # special case, omit from individual copies of mesh
+            if rotation_center_vertex != None :
+                merge_vertex[rotation_center_vertex] = None # special case, omit from individual copies of mesh
             #end if
-            MergedWithVertex = dict(zip(TileLine1, TileLine2))
-            RenumberVertex = dict \
+            merged_with_vertex = dict(zip(tile_line_1, tile_line_2))
+            renumber_vertex = dict \
               (
-                (i, i) for i in range(0, len(OldVertices))
+                (i, i) for i in range(0, len(old_vertices))
               ) # to begin with
-            for v in reversed(sorted(MergeVertex.keys())) : # renumbering of remaining vertices after merging
-                RenumberVertex[v] = None # this one disappears
-                for j in range(v + 1, len(OldVertices)) : # following ones drop down by 1
-                    if RenumberVertex[j] != None :
-                        RenumberVertex[j] -= 1
+            for v in reversed(sorted(merge_vertex.keys())) : # renumbering of remaining vertices after merging
+                renumber_vertex[v] = None # this one disappears
+                for j in range(v + 1, len(old_vertices)) : # following ones drop down by 1
+                    if renumber_vertex[j] != None :
+                        renumber_vertex[j] -= 1
                     #end if
                 #end for
             #end for
-            NrVerticesPerTile = len(OldVertices) - len(TileLine2) - (0, 1)[RotationCenterVertex != None]
-            TotalNrVertices = NrVerticesPerTile * IntReplicate
-            for i in range(0, IntReplicate) :
-                ThisXForm = \
+            nr_vertices_per_tile = len(old_vertices) - len(tile_line_2) - (0, 1)[rotation_center_vertex != None]
+            total_nr_vertices = nr_vertices_per_tile * int_replicate
+            for i in range(0, int_replicate) :
+                this_xform = \
                     (
-                        mathutils.Matrix.Translation(RotationCenter)
+                        mathutils.Matrix.Translation(rotation_center)
                     *
                         mathutils.Matrix.Rotation
                           (
-                            math.pi * 2 * i / IntReplicate, # angle
+                            math.pi * 2 * i / int_replicate, # angle
                             4, # size
-                            RotationAxis # axis
+                            rotation_axis # axis
                           )
                     *
                         mathutils.Matrix.Scale
                           (
-                            Rescale, # factor
+                            rescale, # factor
                             4, # size
-                            ReplicationVector # axis
+                            replication_vector # axis
                           )
                     *
-                        mathutils.Matrix.Translation(- RotationCenter)
+                        mathutils.Matrix.Translation(- rotation_center)
                     )
-                for VertIndex, ThisVertex in enumerate(OldVertices) :
-                    ThisVertex = ThisVertex["co"]
-                    if not VertIndex in MergeVertex :
-                      # vertex in TileLine2 in this copy will be merged with TileLine1 in next copy
-                        ThisSin = \
+                for vert_index, this_vertex in enumerate(old_vertices) :
+                    this_vertex = this_vertex["co"]
+                    if not vert_index in merge_vertex :
+                      # vertex in tile_line_2 in this copy will be merged with tile_line_1 in next copy
+                        this_sin = \
                             (
-                                ((ThisVertex - Center) * ReplicationUnitVector)
+                                ((this_vertex - center) * replication_unit_vector)
                             /
-                                RotationRadiusLength
+                                rotation_radius_length
                             )
-                        ThisCos = math.sqrt(1 - ThisSin * ThisSin)
-                        VertexOffset = RotationRadiusLength * (ThisCos - HalfWidthCos)
-                        VertexOffset = \
+                        this_cos = math.sqrt(1 - this_sin * this_sin)
+                        vertex_offset = rotation_radius_length * (this_cos - half_width_cos)
+                        vertex_offset = \
                             (
-                                VertexOffset * ThisCos * RotationRadiusUnitVector
+                                vertex_offset * this_cos * rotation_radius_unit_vector
                             +
-                                VertexOffset * ThisSin * ReplicationUnitVector
+                                vertex_offset * this_sin * replication_unit_vector
                             )
-                        ThisVertex = ThisXForm * (ThisVertex + VertexOffset)
-                        if VertIndex in MergedWithVertex :
-                          # compute merger of vertex in TileLine1 in this copy with
-                          # TileLine2 in previous copy
-                            ThatVertex = OldVertices[MergedWithVertex[VertIndex]]["co"]
-                            ThatSin = \
+                        this_vertex = this_xform * (this_vertex + vertex_offset)
+                        if vert_index in merged_with_vertex :
+                          # compute merger of vertex in tile_line_1 in this copy with
+                          # tile_line_2 in previous copy
+                            that_vertex = old_vertices[merged_with_vertex[vert_index]]["co"]
+                            that_sin = \
                                 (
-                                    ((ThatVertex - Center) * ReplicationUnitVector)
+                                    ((that_vertex - center) * replication_unit_vector)
                                 /
-                                    RotationRadiusLength
+                                    rotation_radius_length
                                 )
-                            ThatCos = math.sqrt(1 - ThatSin * ThatSin)
-                            VertexOffset = RotationRadiusLength * (ThatCos - HalfWidthCos)
-                            VertexOffset = \
+                            that_cos = math.sqrt(1 - that_sin * that_sin)
+                            vertex_offset = rotation_radius_length * (that_cos - half_width_cos)
+                            vertex_offset = \
                                 (
-                                    VertexOffset * ThatCos * RotationRadiusUnitVector
+                                    vertex_offset * that_cos * rotation_radius_unit_vector
                                 +
-                                    VertexOffset * ThatSin * ReplicationUnitVector
+                                    vertex_offset * that_sin * replication_unit_vector
                                 )
-                            ThatVertex = \
+                            that_vertex = \
                                 (
                                     (
-                                        mathutils.Matrix.Translation(RotationCenter)
+                                        mathutils.Matrix.Translation(rotation_center)
                                     *
                                         mathutils.Matrix.Rotation
                                           (
-                                            math.pi * 2 * ((i + IntReplicate - 1) % IntReplicate) / IntReplicate, # angle
+                                            math.pi * 2 * ((i + int_replicate - 1) % int_replicate) / int_replicate, # angle
                                             4, # size
-                                            RotationAxis # axis
+                                            rotation_axis # axis
                                           )
                                     *
                                         mathutils.Matrix.Scale
                                           (
-                                            Rescale, # factor
+                                            rescale, # factor
                                             4, # size
-                                            ReplicationVector # axis
+                                            replication_vector # axis
                                           )
                                     *
-                                        mathutils.Matrix.Translation(- RotationCenter)
+                                        mathutils.Matrix.Translation(- rotation_center)
                                     )
                                 *
-                                    (ThatVertex + VertexOffset)
+                                    (that_vertex + vertex_offset)
                                 )
-                            ThisVertex = (ThisVertex + ThatVertex) / 2
+                            this_vertex = (this_vertex + that_vertex) / 2
                         #end if
-                        NewVertices.append(dict(OldVertices[VertIndex])) # shallow copy is enough
-                        NewVertices[-1]["co"] = ThisVertex
+                        new_vertices.append(dict(old_vertices[vert_index])) # shallow copy is enough
+                        new_vertices[-1]["co"] = this_vertex
                     #end if
                 #end for
-                for ThisFace in TheMesh.polygons :
-                    NewFace = []
-                    for v in ThisFace.vertices :
-                        if v in MergeVertex :
-                            v = (RenumberVertex[MergeVertex[v]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices
+                for this_face in the_mesh.polygons :
+                    new_face = []
+                    for v in this_face.vertices :
+                        if v in merge_vertex :
+                            v = (renumber_vertex[merge_vertex[v]] + (i + 1) * nr_vertices_per_tile) % total_nr_vertices
                         else :
-                            v = RenumberVertex[v] + i * NrVerticesPerTile
+                            v = renumber_vertex[v] + i * nr_vertices_per_tile
                         #end if
-                        NewFace.append(v)
+                        new_face.append(v)
                     #end for
-                    Faces.append(NewFace)
+                    faces.append(new_face)
                 #end for
                 if self.join_ends :
-                    # add faces to close up the gap between JoinLine1 and JoinLine2
-                    Vertex1Prev, Vertex2Prev = JoinLine1[0], JoinLine2[0]
-                    for Vertex1, Vertex2 in zip(JoinLine1[1:-1], JoinLine2[1:-1]) :
-                        Faces.append \
+                    # add faces to close up the gap between join_line_1 and join_line_2
+                    vertex_1_prev, vertex_2_prev = join_line_1[0], join_line_2[0]
+                    for vertex_1, vertex_2 in zip(join_line_1[1:-1], join_line_2[1:-1]) :
+                        faces.append \
                           (
                             [
-                                RenumberVertex[Vertex1Prev] + i * NrVerticesPerTile,
-                                RenumberVertex[Vertex2Prev] + i * NrVerticesPerTile,
-                                RenumberVertex[Vertex2] + i * NrVerticesPerTile,
-                                RenumberVertex[Vertex1] + i * NrVerticesPerTile,
+                                renumber_vertex[vertex_1_prev] + i * nr_vertices_per_tile,
+                                renumber_vertex[vertex_2_prev] + i * nr_vertices_per_tile,
+                                renumber_vertex[vertex_2] + i * nr_vertices_per_tile,
+                                renumber_vertex[vertex_1] + i * nr_vertices_per_tile,
                             ]
                           )
-                        Vertex1Prev, Vertex2Prev = Vertex1, Vertex2
+                        vertex_1_prev, vertex_2_prev = vertex_1, vertex_2
                     #end for
-                    Faces.append \
+                    faces.append \
                       (
                         [
-                            RenumberVertex[Vertex1Prev] + i * NrVerticesPerTile,
-                            RenumberVertex[Vertex2Prev] + i * NrVerticesPerTile,
-                            (RenumberVertex[MergeVertex[JoinLine2[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
-                            (RenumberVertex[MergeVertex[JoinLine1[-1]]] + (i + 1) * NrVerticesPerTile) % TotalNrVertices,
+                            renumber_vertex[vertex_1_prev] + i * nr_vertices_per_tile,
+                            renumber_vertex[vertex_2_prev] + i * nr_vertices_per_tile,
+                            (renumber_vertex[merge_vertex[join_line_2[-1]]] + (i + 1) * nr_vertices_per_tile) % total_nr_vertices,
+                            (renumber_vertex[merge_vertex[join_line_1[-1]]] + (i + 1) * nr_vertices_per_tile) % total_nr_vertices,
                         ]
                       )
                 #end if
             #end for
-            NewMesh.from_pydata(list(v["co"] for v in NewVertices), [], Faces)
-            NewObj = bpy.data.objects.new(NewMeshName, NewMesh)
-            for g in TheObject.vertex_groups :
-                NewObj.vertex_groups.new(g.name)
+            new_mesh.from_pydata(list(v["co"] for v in new_vertices), [], faces)
+            new_obj = bpy.data.objects.new(new_mesh_name, new_mesh)
+            for g in the_object.vertex_groups :
+                new_obj.vertex_groups.new(g.name)
             #end for
-            for m in TheMesh.materials :
-                NewMesh.materials.append(m)
+            for m in the_mesh.materials :
+                new_mesh.materials.append(m)
             #end for
-            if len(TheMesh.materials) != 0 and self.join_ends and self.smooth_join :
-                NewMesh.materials.append(TheMesh.materials[0])
-                JoinedFaceMaterial = len(NewMesh.materials) - 1 # 0-based
+            if len(the_mesh.materials) != 0 and self.join_ends and self.smooth_join :
+                new_mesh.materials.append(the_mesh.materials[0])
+                joined_face_material = len(new_mesh.materials) - 1 # 0-based
             else :
-                JoinedFaceMaterial = None
+                joined_face_material = None
             #end if
-            for i in range(0, len(NewVertices)) :
-                NewMesh.vertices[i].bevel_weight = NewVertices[i]["bevel_weight"]
-                for g in NewVertices[i]["groups"] :
-                    NewObj.vertex_groups[g["group"]].add \
+            for i in range(0, len(new_vertices)) :
+                new_mesh.vertices[i].bevel_weight = new_vertices[i]["bevel_weight"]
+                for g in new_vertices[i]["groups"] :
+                    new_obj.vertex_groups[g["group"]].add \
                       (
                         index = (i,), # not batching because each vertex might have different weight
                         weight = g["weight"],
@@ -598,57 +598,57 @@ class TileTread(bpy.types.Operator) :
                  #end for
             #end for
             # copy material and smoothness settings to corresponding faces of new mesh
-            OldFaceSettings = FaceSettings
-            FaceSettings = {}
-            for OldFaceVertices in OldFaceSettings :
-                FaceVertices = []
-                for OldVertex in OldFaceVertices :
-                    if OldVertex in MergeVertex :
-                        NewVertex = RenumberVertex[MergeVertex[OldVertex]]
+            old_face_settings = face_settings
+            face_settings = {}
+            for old_face_vertices in old_face_settings :
+                face_vertices = []
+                for old_vertex in old_face_vertices :
+                    if old_vertex in merge_vertex :
+                        new_vertex = renumber_vertex[merge_vertex[old_vertex]]
                     else :
-                        NewVertex = RenumberVertex[OldVertex]
+                        new_vertex = renumber_vertex[old_vertex]
                     #end if
-                    if NewVertex != None :
-                        FaceVertices.append(NewVertex)
+                    if new_vertex != None :
+                        face_vertices.append(new_vertex)
                     #end if
                 #end for
-                FaceSettings[tuple(sorted(FaceVertices))] = OldFaceSettings[tuple(sorted(OldFaceVertices))]
+                face_settings[tuple(sorted(face_vertices))] = old_face_settings[tuple(sorted(old_face_vertices))]
             #end for
-            for ThisFace in NewMesh.polygons :
-                FaceVertices = tuple(sorted((v % NrVerticesPerTile for v in sorted(ThisFace.vertices))))
-                if FaceVertices in FaceSettings :
-                    ThisFaceSettings = FaceSettings[FaceVertices]
-                    ThisFace.use_smooth = ThisFaceSettings["use_smooth"]
-                    ThisFace.material_index = ThisFaceSettings["material_index"]
+            for this_face in new_mesh.polygons :
+                face_vertices = tuple(sorted((v % nr_vertices_per_tile for v in sorted(this_face.vertices))))
+                if face_vertices in face_settings :
+                    this_face_settings = face_settings[face_vertices]
+                    this_face.use_smooth = this_face_settings["use_smooth"]
+                    this_face.material_index = this_face_settings["material_index"]
                 else :
-                    ThisFace.use_smooth = self.smooth_join
-                    if JoinedFaceMaterial != None :
-                        ThisFace.material_index = JoinedFaceMaterial
+                    this_face.use_smooth = self.smooth_join
+                    if joined_face_material != None :
+                        this_face.material_index = joined_face_material
                     #end if
                 #end if
             #end for
-            NewMesh.update()
-            context.scene.objects.link(NewObj)
-            NewObj.matrix_local = TheObject.matrix_local
-            NewObjName = NewObj.name
+            new_mesh.update()
+            context.scene.objects.link(new_obj)
+            new_obj.matrix_local = the_object.matrix_local
+            new_obj_name = new_obj.name
             bpy.ops.object.select_all(action = "DESELECT")
-            bpy.data.objects[NewObjName].select = True
-            for ThisVertex in NewMesh.vertices :
-                ThisVertex.select = True # usual Blender default for newly-created object
+            bpy.data.objects[new_obj_name].select = True
+            for this_vertex in new_mesh.vertices :
+                this_vertex.select = True # usual Blender default for newly-created object
             #end for
-            NewMesh.update()
+            new_mesh.update()
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.normals_make_consistent()
             bpy.ops.object.editmode_toggle()
             # all done
-            Status = {"FINISHED"}
-        except Failure as Why :
-            sys.stderr.write("Failure: %s\n" % Why.Msg) # debug
-            self.report({"ERROR"}, Why.Msg)
-            Status = {"CANCELLED"}
+            status = {"FINISHED"}
+        except Failure as why :
+            sys.stderr.write("Failure: %s\n" % why.msg) # debug
+            self.report({"ERROR"}, why.msg)
+            status = {"CANCELLED"}
         #end try
         context.tool_settings.mesh_select_mode = save_mesh_select_mode
-        return Status
+        return status
     #end action_common
 
     def execute(self, context) :
@@ -662,9 +662,9 @@ class TileTread(bpy.types.Operator) :
 #end TileTread
 
 def add_invoke_button(self, context) :
-    TheCol = self.layout.column(align = True) # gives a nicer grouping of my items
-    TheCol.label("Tread Tiler:")
-    TheCol.operator("mesh.tile_tread", text = "Tile Tread")
+    the_col = self.layout.column(align = True) # gives a nicer grouping of my items
+    the_col.label("Tread Tiler:")
+    the_col.operator("mesh.tile_tread", text = "Tile Tread")
 #end add_invoke_button
 
 def register() :
